@@ -34,10 +34,13 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
+      - name: Clear conflicting SDK env var
+        run: echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
+
       - name: Accept licenses and install SDK packages
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-28" "build-tools;28.0.3"
+          sdkmanager "platform-tools" "platforms;android-28" "build-tools;30.0.3"
 
       - name: Download Gradle 7.6 directly (matches AGP 7.4.2)
         run: |
