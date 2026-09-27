@@ -34,8 +34,8 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Clear conflicting SDK env var
-        run: echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
+      - name: Align SDK env vars
+        run: echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
 
       - name: Accept licenses and install SDK packages
         run: |
