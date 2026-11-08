@@ -45,7 +45,7 @@ public class GangsterGame extends ApplicationAdapter {
   camera.near=.1f; camera.far=650;
   loadModels(); buildDistrict();
   player=new ModelInstance(playerModel); player.transform.setToTranslation(px,1.03f,pz);
-  car=new ModelInstance(carModel); updateCamera();
+  car=new ModelInstance(carModel); car.transform.setToTranslation(cx,0,cz).rotate(Vector3.Y,carHeading*MathUtils.radiansToDegrees); updateCamera();
   Gdx.input.setCatchKey(Input.Keys.BACK,true); Gdx.input.setInputProcessor(new Controls());
  }
 
