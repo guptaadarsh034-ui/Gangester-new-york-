@@ -112,6 +112,37 @@ func _city() -> void:
 	_vehicle_prop(Vector3(-6,0.15,7),Color(0.12,0.35,0.72))
 	_vehicle_prop(Vector3(6,0.15,-5),Color(0.72,0.19,0.12))
 	_vehicle_prop(Vector3(-6,0.15,-31),Color(0.82,0.68,0.18))
+	_build_neighborhood_extension()
+
+
+func _build_neighborhood_extension() -> void:
+	# Expand the starter street into a compact Manhattan-style neighbourhood grid.
+	for z in [-43.0, 38.0]:
+		_box("CrossStreet", Vector3(0,-0.31,z), Vector3(150,0.48,15), Color(0.075,0.09,0.12), true)
+		for x in range(-68, 70, 12):
+			_box("CrossStreetDash", Vector3(float(x),-0.055,z), Vector3(5,0.035,0.18), Color(0.94,0.78,0.43), false)
+		for x in [-7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0]:
+			_box("CrosswalkStripe", Vector3(x,-0.045,z-7.1), Vector3(1.1,0.035,0.55), Color(0.84,0.86,0.85), false)
+	# Extra blocks, with varied heights and colours, create a deeper skyline.
+	for side in [-1,1]:
+		for row in range(3):
+			var x: float = float(side) * (48.0 + float(row % 2) * 15.0)
+			var z: float = -31.0 + float(row) * 34.0
+			var height: float = 17.0 + float((row * 11 + side * 7) % 19)
+			_building(Vector3(x,height*0.5-0.1,z), Vector3(13.0,height,17.0), row + side * 5 + 17)
+			if row != 1:
+				_tree(Vector3(float(side)*31.0,0,z+11.0))
+	# A few recognisable city details at street level.
+	for side in [-1,1]:
+		for z in [-30.0, 12.0]:
+			_box("ShopAwning", Vector3(float(side)*17.2,3.0,z), Vector3(0.35,0.45,5.0), Color(0.78,0.22,0.12), false)
+			_box("ShopSign", Vector3(float(side)*17.0,4.0,z), Vector3(0.22,0.55,4.2), Color(0.94,0.72,0.28), false)
+	# Distant silhouettes make the playable district feel surrounded by a city.
+	for i in range(12):
+		var side: float = -1.0 if i % 2 == 0 else 1.0
+		var z: float = -55.0 + float(i / 2) * 19.0
+		var h: float = 28.0 + float((i * 13) % 34)
+		_building(Vector3(side*82.0,h*0.5-0.1,z), Vector3(16.0,h,18.0), i+24)
 
 func _building(pos: Vector3, size: Vector3, variant: int) -> void:
 	var palettes := [Color(0.35,0.42,0.52),Color(0.55,0.36,0.27),Color(0.42,0.48,0.43),Color(0.48,0.42,0.56),Color(0.65,0.52,0.35)]
