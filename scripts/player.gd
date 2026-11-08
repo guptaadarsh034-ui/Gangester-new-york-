@@ -4,6 +4,7 @@ extends CharacterBody3D
 var gravity := 22.0
 var cooldown := 0.0
 var camera: Camera3D
+var in_vehicle := false
 func _ready() -> void:
 	var pivot := Node3D.new()
 	pivot.position = Vector3(0, 1.55, 0)
@@ -14,6 +15,9 @@ func _ready() -> void:
 	camera.current = true
 	pivot.add_child(camera)
 func _physics_process(delta: float) -> void:
+	if in_vehicle:
+		velocity = Vector3.ZERO
+		return
 	cooldown = maxf(0.0, cooldown - delta)
 	var v := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var d := Vector3(v.x, 0, v.y)
