@@ -54,13 +54,15 @@ jobs:
       - name: Validate project scripts and import resources
         run: |
           godot --headless --editor --path . --import
-          godot --headless --path . --quit --verbose
+          set -o pipefail
+          godot --headless --path . --quit-after 3 --verbose 2>&1 | tee /tmp/godot-runtime.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script" /tmp/godot-runtime.log; then exit 1; fi
       - name: Export ARM64 debug APK
         run: |
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/GangsterNewYork.apk
           test -s build/GangsterNewYork.apk
-          aapt dump badging build/GangsterNewYork.apk | head -n 5
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging build/GangsterNewYork.apk | head -n 5
       - uses: actions/upload-artifact@v4
         with:
           name: gangster-new-york-godot-android-apk
