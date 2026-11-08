@@ -24,9 +24,9 @@ func _ready() -> void:
 	_hud()
 	_refresh()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not is_instance_valid(player): return
-	_update_vehicle(get_process_delta_time())
+	_update_vehicle(delta)
 	health_label.text = "♥  %d" % player.health
 	if is_instance_valid(phone_gps_label): phone_gps_label.text = objective_label.text
 	if player.health <= 0 and stage < 3:
@@ -114,7 +114,6 @@ func _city() -> void:
 	_box("WarehouseSign",Vector3(0,5.4,-15.28),Vector3(7,0.85,0.18),Color(0.9,0.42,0.12),false)
 	_box("Safehouse",Vector3(0,2.5,29),Vector3(15,5,9),Color(0.48,0.28,0.19),false)
 	_box("SafehouseRoof",Vector3(0,5.1,29),Vector3(15.6,0.35,9.6),Color(0.16,0.17,0.2),false)
-	_vehicle_prop(Vector3(-6,0.15,7),Color(0.12,0.35,0.72))
 	_create_drivable_car(Vector3(-6,0.1,7))
 	_vehicle_prop(Vector3(6,0.15,-5),Color(0.72,0.19,0.12))
 	_vehicle_prop(Vector3(-6,0.15,-31),Color(0.82,0.68,0.18))
@@ -402,6 +401,7 @@ func _update_vehicle(delta: float) -> void:
 		if player.global_position.distance_to(drivable_car.global_position) < 3.4 and Input.is_action_just_pressed("interact"):
 			in_vehicle = true
 			player.in_vehicle = true
+			player.visible = false
 			player.global_position = drivable_car.global_position
 			vehicle_speed = 0.0
 			vehicle_hint.text = "DRIVING: WASD / TOUCH to steer • ACTION to exit"
@@ -409,6 +409,7 @@ func _update_vehicle(delta: float) -> void:
 	if Input.is_action_just_pressed("interact"):
 		in_vehicle = false
 		player.in_vehicle = false
+		player.visible = true
 		player.global_position = drivable_car.global_position + drivable_car.global_transform.basis.x * 2.2
 		vehicle_hint.text = "Walk up to the blue car and tap ACTION to drive"
 		return
