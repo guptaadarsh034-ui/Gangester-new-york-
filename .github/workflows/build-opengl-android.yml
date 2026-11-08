@@ -19,7 +19,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Generate original 3D OBJ assets
+      - name: Install 3D interchange exporter
+        run: pip install trimesh
+      - name: Generate original 3D OBJ and GLB assets
         run: python3 engine/tools/generate_models.py
       - name: Build Android APK
         working-directory: engine
@@ -28,4 +30,12 @@ jobs:
         with:
           name: gangster-new-york-opengl-debug-apk
           path: engine/android/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      - name: Upload editable 3D models
+        uses: actions/upload-artifact@v4
+        with:
+          name: gangster-new-york-original-3d-models
+          path: |
+            engine/android/src/main/assets/models/*
+            engine/art-source/glb/*
           if-no-files-found: error
