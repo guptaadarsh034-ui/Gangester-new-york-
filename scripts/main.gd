@@ -8,6 +8,9 @@ var stage := 0
 var title_label: Label
 var objective_label: Label
 var health_label: Label
+var phone_panel: PanelContainer
+var phone_gps_label: Label
+var phone_status_label: Label
 
 func _ready() -> void:
 	_input_setup()
@@ -20,6 +23,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player): return
 	health_label.text = "♥  %d" % player.health
+	if is_instance_valid(phone_gps_label): phone_gps_label.text = objective_label.text
 	if player.health <= 0 and stage < 3:
 		stage = 4
 		_refresh()
@@ -269,6 +273,7 @@ func _hud() -> void:
 	var hint := _label(ui,"WASD / TOUCH TO MOVE     •     FIRE TO SHOOT",Vector2(-330,-28),13)
 	hint.anchor_left = 1.0
 	hint.anchor_right = 1.0
+	_phone_ui(ui)
 
 func _label(parent: Control,txt: String,pos: Vector2,size: int) -> Label:
 	var l := Label.new()
@@ -328,3 +333,88 @@ func _refresh() -> void:
 		3: objective_label.text="OBJECTIVE: Escape to the safehouse"
 		4: objective_label.text="MISSION FAILED — Restart the game"
 		5: objective_label.text="MISSION COMPLETE! Package secured."
+
+
+func _phone_ui(parent: Control) -> void:
+	var phone_button := Button.new()
+	phone_button.text = "📱 PHONE"
+	phone_button.position = Vector2(-158, 22)
+	phone_button.size = Vector2(138, 58)
+	phone_button.anchor_left = 1.0
+	phone_button.anchor_right = 1.0
+	phone_button.add_theme_font_size_override("font_size", 18)
+	phone_button.add_theme_stylebox_override("normal", _button_style(Color(0.06, 0.1, 0.16, 0.94)))
+	phone_button.add_theme_stylebox_override("pressed", _button_style(Color(0.18, 0.34, 0.48, 0.98)))
+	parent.add_child(phone_button)
+
+	phone_panel = PanelContainer.new()
+	phone_panel.position = Vector2(-370, 94)
+	phone_panel.size = Vector2(350, 420)
+	phone_panel.anchor_left = 1.0
+	phone_panel.anchor_right = 1.0
+	phone_panel.visible = false
+	phone_panel.add_theme_stylebox_override("panel", _button_style(Color(0.035, 0.055, 0.085, 0.97)))
+	parent.add_child(phone_panel)
+
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 10)
+	phone_panel.add_child(content)
+
+	var heading := Label.new()
+	heading.text = "CARL'S SMARTPHONE"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 22)
+	content.add_child(heading)
+
+	var gps_title := Label.new()
+	gps_title.text = "GPS  /  CURRENT OBJECTIVE"
+	gps_title.add_theme_font_size_override("font_size", 15)
+	content.add_child(gps_title)
+	phone_gps_label = Label.new()
+	phone_gps_label.text = "OBJECTIVE: Find your first job"
+	phone_gps_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phone_gps_label.add_theme_font_size_override("font_size", 17)
+	content.add_child(phone_gps_label)
+
+	var apps := GridContainer.new()
+	apps.columns = 2
+	apps.add_theme_constant_override("h_separation", 8)
+	apps.add_theme_constant_override("v_separation", 8)
+	content.add_child(apps)
+	for app_name in ["MAP / GPS", "CONTACTS", "MESSAGES", "BANK", "MISSIONS", "SETTINGS"]:
+		var app_button := Button.new()
+		app_button.text = app_name
+		app_button.custom_minimum_size = Vector2(145, 54)
+		app_button.add_theme_font_size_override("font_size", 15)
+		app_button.add_theme_stylebox_override("normal", _button_style(Color(0.12, 0.19, 0.27, 0.98)))
+		apps.add_child(app_button)
+		app_button.pressed.connect(func(): _phone_app_selected(app_name))
+
+	phone_status_label = Label.new()
+	phone_status_label.text = "Choose an app"
+	phone_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phone_status_label.add_theme_font_size_override("font_size", 14)
+	content.add_child(phone_status_label)
+
+	var close_button := Button.new()
+	close_button.text = "CLOSE PHONE"
+	close_button.custom_minimum_size = Vector2(0, 48)
+	content.add_child(close_button)
+	close_button.pressed.connect(func(): phone_panel.visible = false)
+	phone_button.pressed.connect(func(): phone_panel.visible = not phone_panel.visible)
+
+func _phone_app_selected(app_name: String) -> void:
+	if not is_instance_valid(phone_status_label): return
+	match app_name:
+		"MAP / GPS":
+			phone_status_label.text = "GPS is tracking Carl. Follow the current mission objective."
+		"CONTACTS":
+			phone_status_label.text = "CONTACTS: No contacts saved yet."
+		"MESSAGES":
+			phone_status_label.text = "MESSAGES: No new messages."
+		"BANK":
+			phone_status_label.text = "BANK BALANCE: $500"
+		"MISSIONS":
+			phone_status_label.text = "MISSIONS: " + objective_label.text
+		_:
+			phone_status_label.text = "SETTINGS: Audio and gameplay options will be added in a later update."
