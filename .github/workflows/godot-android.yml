@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
       - name: Install Android SDK components
         run: |
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses
           "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
       - name: Install Godot and Android export templates
