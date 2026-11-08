@@ -2,6 +2,10 @@
 
 An offline-first 3D Android action-game prototype built with Godot 4.5.1.
 
+## Current build: 0.2.0 (version code 2)
+
+This build includes the expanded New York street layout and first smartphone interface. It is still an early prototype; these changes do not yet constitute a full Payback 2-level graphics or gameplay upgrade.
+
 ## Playable milestone: Mission 01 — The Stolen Package
 - Third-person 3D character movement and camera
 - Procedurally assembled city street, warehouse and safehouse
