@@ -118,11 +118,11 @@ func _building(pos: Vector3, size: Vector3, variant: int) -> void:
 	for floor in range(floors):
 		for side in [-1,1]:
 			for col in range(2):
-				var wx := pos.x + side*(size.x*0.5+0.035)
-				var wz := pos.z + (col-0.5)*size.z*0.48
+				var wx: float = pos.x + float(side)*(size.x*0.5+0.035)
+				var wz: float = pos.z + (float(col)-0.5)*size.z*0.48
 				_box("LitWindow",Vector3(wx,pos.y-size.y*0.5+1.8+floor*3.0,wz),Vector3(0.07,1.35,1.35),Color(0.22,0.58,0.76) if (floor+col+variant)%3==0 else Color(0.13,0.2,0.28),false)
 		for col in range(2):
-			var wz := pos.z-size.z*0.5+(col+0.5)*size.z*0.5
+			var wz: float = pos.z-size.z*0.5+(float(col)+0.5)*size.z*0.5
 			_box("FrontWindow",Vector3(pos.x,pos.y-size.y*0.5+1.8+floor*3.0,wz),Vector3(1.5,1.35,0.07),Color(0.85,0.66,0.38) if (floor+col)%4==0 else Color(0.13,0.22,0.3),false)
 	_box("Storefront",Vector3(pos.x,pos.y-size.y*0.5+1.0,pos.z-size.z*0.5-0.05),Vector3(size.x*0.55,1.7,0.12),Color(0.12,0.17,0.22),false)
 
