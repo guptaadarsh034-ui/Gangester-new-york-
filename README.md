@@ -32,3 +32,10 @@ Work in progress — personal/hobby project.
 ## License
 Personal project — all original code here is provided as-is for
 educational and personal use
+
+
+## 3D OpenGL engine
+
+A separate Java / LibGDX / OpenGL ES 3.0 engine prototype is available in [engine/](engine/). It adds a third-person 3D New York starter district, original low-poly OBJ models, a basic drivable sedan and Android touch controls. See [engine/README.md](engine/README.md). GitHub Actions workflow: [Build GNY OpenGL Android APK](.github/workflows/build-opengl-android.yml).
+
+**Status note:** the 3D track is an early prototype. The seven-region connected world, full traffic and pedestrian AI, advanced missions and animation are not yet complete.
