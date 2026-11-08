@@ -8,6 +8,7 @@ var stage := 0
 var title_label: Label
 var objective_label: Label
 var health_label: Label
+
 func _ready() -> void:
 	_input_setup()
 	_city()
@@ -15,9 +16,10 @@ func _ready() -> void:
 	_mission()
 	_hud()
 	_refresh()
+
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player): return
-	health_label.text = "HEALTH  %d" % player.health
+	health_label.text = "♥  %d" % player.health
 	if player.health <= 0 and stage < 3:
 		stage = 4
 		_refresh()
@@ -34,6 +36,7 @@ func _process(_delta: float) -> void:
 	if stage == 3 and player.global_position.distance_to(Vector3(0,0,22)) < 5:
 		stage = 5
 		_refresh()
+
 func _input_setup() -> void:
 	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E,KEY_SPACE]}
 	for action in map:
@@ -42,41 +45,132 @@ func _input_setup() -> void:
 			var e := InputEventKey.new()
 			e.physical_keycode = code
 			InputMap.action_add_event(action,e)
+
+func _mat(color: Color, roughness := 0.85, metallic := 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = roughness
+	m.metallic = metallic
+	return m
+
 func _city() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
-	env.sky = Sky.new()
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.12,0.25,0.48)
+	sky_mat.sky_horizon_color = Color(0.78,0.58,0.42)
+	sky_mat.ground_bottom_color = Color(0.12,0.14,0.18)
+	sky_mat.ground_horizon_color = Color(0.48,0.42,0.38)
+	sky.sky_material = sky_mat
+	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.48,0.55,0.68)
-	env.ambient_light_energy = 0.7
+	env.ambient_light_color = Color(0.62,0.68,0.82)
+	env.ambient_light_energy = 0.85
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.fog_enabled = true
+	env.fog_light_color = Color(0.48,0.52,0.62)
+	env.fog_density = 0.006
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48,-32,0)
+	sun.light_color = Color(1.0,0.82,0.66)
+	sun.light_energy = 1.25
+	sun.shadow_enabled = true
 	add_child(sun)
-	_box("Asphalt",Vector3(0,-0.35,0),Vector3(18,0.5,90),Color(0.12,0.14,0.17),true)
-	_box("WestWalk",Vector3(-11,-0.1,0),Vector3(4,0.4,90),Color(0.42,0.42,0.4),true)
-	_box("EastWalk",Vector3(11,-0.1,0),Vector3(4,0.4,90),Color(0.42,0.42,0.4),true)
-	for z in range(-40,45,12):
-		_box("LaneStripe",Vector3(0,-0.08,z),Vector3(0.22,0.05,5),Color(0.9,0.82,0.5),false)
+	_box("Road",Vector3(0,-0.35,0),Vector3(18,0.5,110),Color(0.075,0.09,0.12),true)
 	for side in [-1,1]:
-		for i in range(4):
-			var z := -32.0 + i * 21.0
-			var h := 9.0 + float((i*7)%5)
-			_box("CityBlock",Vector3(side*19,h*0.5-0.1,z),Vector3(11,h,15),Color(0.18+i*0.025,0.22,0.28),true)
-	_box("Warehouse",Vector3(0,3.5,-22),Vector3(19,7,13),Color(0.28,0.31,0.34),false)
-	_box("WarehouseDoor",Vector3(0,2.2,-15.35),Vector3(5,4.4,0.2),Color(0.08,0.1,0.12),false)
-	_box("Safehouse",Vector3(0,2.5,29),Vector3(15,5,9),Color(0.28,0.24,0.2),false)
+		_box("Sidewalk",Vector3(side*11,-0.1,0),Vector3(4,0.4,110),Color(0.55,0.53,0.48),true)
+		_box("Curb",Vector3(side*8.9,0.02,0),Vector3(0.28,0.28,110),Color(0.72,0.69,0.6),true)
+	for z in range(-50,55,10):
+		_box("LaneDash",Vector3(0,-0.075,z),Vector3(0.18,0.04,4.5),Color(0.96,0.78,0.38),false)
+		_box("CrosswalkA",Vector3(-7.8,-0.065,z),Vector3(1.2,0.04,0.65),Color(0.82,0.83,0.8),false)
+		_box("CrosswalkB",Vector3(7.8,-0.065,z),Vector3(1.2,0.04,0.65),Color(0.82,0.83,0.8),false)
+	for side in [-1,1]:
+		for i in range(6):
+			var z := -43.0 + i * 17.0
+			var h := 13.0 + float((i*7)%9)
+			_building(Vector3(side*23,h*0.5-0.1,z),Vector3(12,h,14),i+int(side*2))
+		for z in range(-38,45,20):
+			_streetlight(side,z)
+			_tree(Vector3(side*13.2,0,z+7))
+	# Landmark buildings and skyline silhouettes
+	_building(Vector3(-39,11, -8),Vector3(15,22,20),8)
+	_building(Vector3(39,15, 13),Vector3(16,30,18),11)
+	_box("Warehouse",Vector3(0,3.5,-22),Vector3(19,7,13),Color(0.36,0.39,0.43),false)
+	_box("WarehouseRoof",Vector3(0,7.15,-22),Vector3(19.6,0.35,13.6),Color(0.16,0.19,0.23),false)
+	_box("WarehouseDoor",Vector3(0,2.2,-15.35),Vector3(5,4.4,0.2),Color(0.08,0.1,0.13),false)
+	_box("WarehouseSign",Vector3(0,5.4,-15.28),Vector3(7,0.85,0.18),Color(0.9,0.42,0.12),false)
+	_box("Safehouse",Vector3(0,2.5,29),Vector3(15,5,9),Color(0.48,0.28,0.19),false)
+	_box("SafehouseRoof",Vector3(0,5.1,29),Vector3(15.6,0.35,9.6),Color(0.16,0.17,0.2),false)
+	_vehicle_prop(Vector3(-6,0.15,7),Color(0.12,0.35,0.72))
+	_vehicle_prop(Vector3(6,0.15,-5),Color(0.72,0.19,0.12))
+	_vehicle_prop(Vector3(-6,0.15,-31),Color(0.82,0.68,0.18))
+
+func _building(pos: Vector3, size: Vector3, variant: int) -> void:
+	var palettes := [Color(0.35,0.42,0.52),Color(0.55,0.36,0.27),Color(0.42,0.48,0.43),Color(0.48,0.42,0.56),Color(0.65,0.52,0.35)]
+	var color: Color = palettes[abs(variant)%palettes.size()]
+	_box("Building",pos,size,color,true)
+	_box("RoofTrim",pos+Vector3(0,size.y*0.5+0.16,0),Vector3(size.x+0.5,0.32,size.z+0.5),color.darkened(0.28),false)
+	var floors := int(size.y/3.2)
+	for floor in range(floors):
+		for side in [-1,1]:
+			for col in range(2):
+				var wx := pos.x + side*(size.x*0.5+0.035)
+				var wz := pos.z + (col-0.5)*size.z*0.48
+				_box("LitWindow",Vector3(wx,pos.y-size.y*0.5+1.8+floor*3.0,wz),Vector3(0.07,1.35,1.35),Color(0.22,0.58,0.76) if (floor+col+variant)%3==0 else Color(0.13,0.2,0.28),false)
+		for col in range(2):
+			var wz := pos.z-size.z*0.5+(col+0.5)*size.z*0.5
+			_box("FrontWindow",Vector3(pos.x,pos.y-size.y*0.5+1.8+floor*3.0,wz),Vector3(1.5,1.35,0.07),Color(0.85,0.66,0.38) if (floor+col)%4==0 else Color(0.13,0.22,0.3),false)
+	_box("Storefront",Vector3(pos.x,pos.y-size.y*0.5+1.0,pos.z-size.z*0.5-0.05),Vector3(size.x*0.55,1.7,0.12),Color(0.12,0.17,0.22),false)
+
+func _streetlight(side: int, z: float) -> void:
+	_box("LampPost",Vector3(side*9.5,3.0,z),Vector3(0.16,6,0.16),Color(0.12,0.14,0.16),false)
+	_box("LampArm",Vector3(side*9.0,5.8,z),Vector3(1.1,0.13,0.13),Color(0.12,0.14,0.16),false)
+	var lamp := _box("Lamp",Vector3(side*8.5,5.72,z),Vector3(0.65,0.18,0.5),Color(1.0,0.82,0.48),false)
+	var light := OmniLight3D.new()
+	light.position = Vector3(side*8.5,5.3,z)
+	light.light_color = Color(1.0,0.72,0.38)
+	light.light_energy = 0.7
+	light.omni_range = 7
+	add_child(light)
+
+func _tree(pos: Vector3) -> void:
+	_box("TreeTrunk",pos+Vector3(0,1.1,0),Vector3(0.55,2.2,0.55),Color(0.3,0.19,0.11),false)
+	var crown := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = 1.65
+	mesh.height = 3.0
+	crown.mesh = mesh
+	crown.position = pos+Vector3(0,3.1,0)
+	crown.material_override = _mat(Color(0.12,0.38,0.2))
+	add_child(crown)
+
+func _vehicle_prop(pos: Vector3, color: Color) -> void:
+	_box("CarBody",pos+Vector3(0,0.75,0),Vector3(2.25,0.8,4.2),color,false)
+	_box("CarCabin",pos+Vector3(0,1.42,-0.15),Vector3(1.75,0.8,2.0),Color(0.12,0.19,0.25),false)
+	for x in [-1,1]:
+		for z in [-1.35,1.35]:
+			var wheel := MeshInstance3D.new()
+			var cylinder := CylinderMesh.new()
+			cylinder.top_radius = 0.42
+			cylinder.bottom_radius = 0.42
+			cylinder.height = 0.28
+			wheel.mesh = cylinder
+			wheel.rotation_degrees.z = 90
+			wheel.position = pos+Vector3(x*1.12,0.48,z)
+			wheel.material_override = _mat(Color(0.035,0.04,0.05))
+			add_child(wheel)
+
 func _box(n: String,p: Vector3,s: Vector3,c: Color,solid: bool) -> Node3D:
 	var root: Node3D = StaticBody3D.new() if solid else MeshInstance3D.new()
 	root.name=n
 	root.position=p
 	var mesh := BoxMesh.new()
 	mesh.size=s
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color=c
-	mesh.material=mat
+	mesh.material = _mat(c)
 	if solid:
 		var visual := MeshInstance3D.new()
 		visual.mesh=mesh
@@ -88,27 +182,53 @@ func _box(n: String,p: Vector3,s: Vector3,c: Color,solid: bool) -> Node3D:
 		root.add_child(collision)
 	else:
 		(root as MeshInstance3D).mesh=mesh
-		(root as MeshInstance3D).material_override=mat
+		(root as MeshInstance3D).material_override=_mat(c)
 	add_child(root)
 	return root
+
 func _make_player() -> void:
 	player=CharacterBody3D.new()
 	player.name="Player"
 	player.set_script(PLAYER)
-	_character_visual(player,Color(0.12,0.28,0.58),0.42)
+	_character_visual(player,Color(0.08,0.19,0.34),0.38)
 	player.position=Vector3(0,-0.1,22)
 	add_child(player)
+
 func _character_visual(body: CharacterBody3D,color: Color,radius: float) -> void:
-	var mesh := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius=radius
-	capsule.height=1.8
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color=color
-	capsule.material=mat
-	mesh.mesh=capsule
-	mesh.position.y=0.9
-	body.add_child(mesh)
+	var torso := MeshInstance3D.new()
+	var torso_mesh := CapsuleMesh.new()
+	torso_mesh.radius = radius*0.9
+	torso_mesh.height = 1.05
+	torso_mesh.material = _mat(color)
+	torso.mesh = torso_mesh
+	torso.position = Vector3(0,1.12,0)
+	body.add_child(torso)
+	var head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.27
+	head_mesh.height = 0.54
+	head_mesh.material = _mat(Color(0.72,0.49,0.34))
+	head.mesh = head_mesh
+	head.position = Vector3(0,1.9,0)
+	body.add_child(head)
+	for side in [-1,1]:
+		var arm := MeshInstance3D.new()
+		var limb := CapsuleMesh.new()
+		limb.radius = 0.13
+		limb.height = 0.85
+		limb.material = _mat(color.darkened(0.2))
+		arm.mesh = limb
+		arm.position = Vector3(side*0.42,1.15,0)
+		arm.rotation.z = deg_to_rad(side*10)
+		body.add_child(arm)
+		var leg := MeshInstance3D.new()
+		var leg_mesh := CapsuleMesh.new()
+		leg_mesh.radius = 0.16
+		leg_mesh.height = 0.8
+		leg_mesh.material = _mat(Color(0.07,0.08,0.1))
+		leg.mesh = leg_mesh
+		leg.position = Vector3(side*0.18,0.42,0)
+		body.add_child(leg)
 	var col := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.radius=radius
@@ -116,42 +236,52 @@ func _character_visual(body: CharacterBody3D,color: Color,radius: float) -> void
 	col.shape=shape
 	col.position.y=0.9
 	body.add_child(col)
+
 func _mission() -> void:
 	for i in range(3):
 		var guard := CharacterBody3D.new()
 		guard.set_script(ENEMY)
 		guard.target=player
 		guard.position=Vector3(-4+i*4,-0.1,-17+(i%2)*3)
-		_character_visual(guard,Color(0.62,0.12,0.1),0.43)
+		_character_visual(guard,Color(0.48,0.09,0.08),0.4)
 		add_child(guard)
 		guards.append(guard)
 	parcel=_box("StolenPackage",Vector3(0,0.65,-17),Vector3(1,1.1,1),Color(0.75,0.48,0.13),false)
 	_box("ExtractionZone",Vector3(0,0.02,22),Vector3(5,0.06,5),Color(0.1,0.65,0.25),false)
+
 func _hud() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var ui := Control.new()
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(ui)
-	title_label=_label(ui,"MISSION 01 | THE STOLEN PACKAGE",Vector2(24,18),25)
-	objective_label=_label(ui,"",Vector2(24,55),18)
-	health_label=_label(ui,"HEALTH 100",Vector2(24,88),18)
-	_button(ui,"◀",Vector2(25,-105),Vector2(85,70),false,"move_left")
-	_button(ui,"▶",Vector2(205,-105),Vector2(85,70),false,"move_right")
-	_button(ui,"▲",Vector2(115,-180),Vector2(85,70),false,"move_forward")
-	_button(ui,"▼",Vector2(115,-90),Vector2(85,70),false,"move_back")
-	var fire := _button(ui,"FIRE",Vector2(-130,-105),Vector2(105,75),true,"")
+	title_label=_label(ui,"GANGSTER: NEW YORK  •  CHAPTER 01",Vector2(28,18),24)
+	objective_label=_label(ui,"",Vector2(28,55),19)
+	health_label=_label(ui,"♥  100",Vector2(28,88),20)
+	_button(ui,"◀",Vector2(28,-105),Vector2(78,68),false,"move_left")
+	_button(ui,"▶",Vector2(194,-105),Vector2(78,68),false,"move_right")
+	_button(ui,"▲",Vector2(111,-174),Vector2(78,68),false,"move_forward")
+	_button(ui,"▼",Vector2(111,-91),Vector2(78,68),false,"move_back")
+	var fire := _button(ui,"FIRE",Vector2(-135,-108),Vector2(112,78),true,"")
 	fire.pressed.connect(func(): player.shoot())
-	var act := _button(ui,"ACTION",Vector2(-130,-195),Vector2(105,75),true,"")
+	var act := _button(ui,"ACTION",Vector2(-135,-198),Vector2(112,78),true,"")
 	act.pressed.connect(_interact)
+	var hint := _label(ui,"WASD / TOUCH TO MOVE     •     FIRE TO SHOOT",Vector2(-330,-28),13)
+	hint.anchor_left = 1.0
+	hint.anchor_right = 1.0
+
 func _label(parent: Control,txt: String,pos: Vector2,size: int) -> Label:
 	var l := Label.new()
 	l.text=txt
 	l.position=pos
 	l.add_theme_font_size_override("font_size",size)
-	l.add_theme_color_override("font_color",Color.WHITE)
+	l.add_theme_color_override("font_color",Color(1,0.96,0.86))
+	l.add_theme_color_override("font_shadow_color",Color(0,0,0,0.9))
+	l.add_theme_constant_override("shadow_offset_x",2)
+	l.add_theme_constant_override("shadow_offset_y",2)
 	parent.add_child(l)
 	return l
+
 func _button(parent: Control,txt: String,pos: Vector2,size: Vector2,right: bool,action: String) -> Button:
 	var b := Button.new()
 	b.text=txt
@@ -162,25 +292,39 @@ func _button(parent: Control,txt: String,pos: Vector2,size: Vector2,right: bool,
 	b.anchor_top=1.0
 	b.anchor_bottom=1.0
 	b.add_theme_font_size_override("font_size",20)
+	b.add_theme_color_override("font_color",Color.WHITE)
+	b.add_theme_stylebox_override("normal",_button_style(Color(0.08,0.12,0.18,0.88)))
+	b.add_theme_stylebox_override("pressed",_button_style(Color(0.65,0.19,0.09,0.95)))
 	parent.add_child(b)
 	if action != "":
 		b.button_down.connect(func(): Input.action_press(action))
 		b.button_up.connect(func(): Input.action_release(action))
 	return b
+
+func _button_style(color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color(0.95,0.67,0.28,0.9)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(14)
+	return style
+
 func _interact() -> void:
 	Input.action_press("interact")
 	await get_tree().create_timer(0.15).timeout
 	Input.action_release("interact")
+
 func _guard_count() -> int:
 	var count := 0
 	for g in guards:
 		if is_instance_valid(g): count += 1
 	return count
+
 func _refresh() -> void:
 	match stage:
 		0: objective_label.text="OBJECTIVE: Reach the warehouse"
 		1: objective_label.text="OBJECTIVE: Defeat guards (%d remaining)" % _guard_count()
-		2: objective_label.text="OBJECTIVE: Stand by the package and tap ACTION"
-		3: objective_label.text="OBJECTIVE: Escape to the green safehouse marker"
+		2: objective_label.text="OBJECTIVE: Collect the package — tap ACTION"
+		3: objective_label.text="OBJECTIVE: Escape to the safehouse"
 		4: objective_label.text="MISSION FAILED — Restart the game"
 		5: objective_label.text="MISSION COMPLETE! Package secured."
