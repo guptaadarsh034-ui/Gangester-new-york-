@@ -26,7 +26,7 @@ def cylinder(x,y,z,r,h,n=12,axis='y'):
  f=[]
  for i in range(n):
   j=(i+1)%n;f.extend([(i,j,n+j),(i,n+j,n+i)])
- v.extend([(x,y-h/2,z),(x,y+h/2,z)])
+ v.extend([(x-h/2,y,z),(x+h/2,y,z)] if axis=='x' else [(x,y-h/2,z),(x,y+h/2,z)])
  f.extend([(2*n,i,(i+1)%n) for i in range(n)])
  f.extend([(2*n+1,n+(i+1)%n,n+i) for i in range(n)])
  return v,f
