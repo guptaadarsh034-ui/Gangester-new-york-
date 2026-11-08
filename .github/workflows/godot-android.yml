@@ -13,7 +13,8 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y unzip wget
+      - name: Install build utilities
+        run: sudo apt-get update && sudo apt-get install -y unzip wget
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -21,9 +22,14 @@ jobs:
       - name: Install Android SDK components
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMANAGER" --licenses
-          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
-      - name: Install Godot and Android export templates
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;28.1.13356709" \
+            "cmake;3.10.2.4988404"
+      - name: Install Godot and matching Android templates
         run: |
           mkdir -p "$HOME/.local/share/godot/export_templates/4.5.1.stable"
           wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip -O /tmp/godot.zip
@@ -32,13 +38,29 @@ jobs:
           wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz -O /tmp/templates.tpz
           unzip -q /tmp/templates.tpz -d /tmp/templates
           cp -a /tmp/templates/templates/. "$HOME/.local/share/godot/export_templates/4.5.1.stable/"
-      - name: Import project
-        run: godot --headless --editor --path . --import
-      - name: Export APK
+      - name: Configure headless Godot Android export
+        run: |
+          mkdir -p "$HOME/.config/godot" "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cat > "$HOME/.config/godot/editor_settings-4.5.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+      - name: Validate project scripts and import resources
+        run: |
+          godot --headless --editor --path . --import
+          godot --headless --path . --quit --verbose
+      - name: Export ARM64 debug APK
         run: |
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/GangsterNewYork.apk
-      - run: test -s build/GangsterNewYork.apk
+          godot --headless --verbose --path . --export-debug "Android" build/GangsterNewYork.apk
+          test -s build/GangsterNewYork.apk
+          aapt dump badging build/GangsterNewYork.apk | head -n 5
       - uses: actions/upload-artifact@v4
         with:
           name: gangster-new-york-godot-android-apk
