@@ -24,9 +24,11 @@ func _ready() -> void:
 	_hud()
 	_refresh()
 
+func _physics_process(delta: float) -> void:
+	_update_vehicle(delta)
+
 func _process(delta: float) -> void:
 	if not is_instance_valid(player): return
-	_update_vehicle(delta)
 	health_label.text = "♥  %d" % player.health
 	if is_instance_valid(phone_gps_label): phone_gps_label.text = objective_label.text
 	if player.health <= 0 and stage < 3:
@@ -413,7 +415,7 @@ func _update_vehicle(delta: float) -> void:
 		player.global_position = drivable_car.global_position + drivable_car.global_transform.basis.x * 2.2
 		vehicle_hint.text = "Walk up to the blue car and tap ACTION to drive"
 		return
-	var throttle := Input.get_action_strength("move_back") - Input.get_action_strength("move_forward")
+	var throttle := Input.get_action_strength("move_forward") - Input.get_action_strength("move_back")
 	var steering := Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
 	vehicle_speed = move_toward(vehicle_speed, throttle * 13.0, 10.0 * delta)
 	if absf(vehicle_speed) > 0.25:
