@@ -1,41 +1,23 @@
-A lightweight 2D open-world game set in New York City, built in Java for Android — inspired by classic top-down GTA-style gameplay. Fan project, not affiliated with Rockstar Games.
-# Gangster New York
+# GANGSTER: NEW YORK — Godot Edition
 
-A lightweight 2D top-down open-world game built for Android, set in a
-stylized New York City. Inspired by classic top-down GTA-style gameplay,
-built from scratch in plain Java with no game engine — optimized to run
-on low-end devices (Android 4.4+, 512MB RAM).
+An offline-first 3D Android action-game prototype built with Godot 4.5.1.
 
-> This is a fan-made, non-commercial project inspired by the GTA series.
-> Not affiliated with or endorsed by Rockstar Games or Take-Two Interactive.
+## Playable milestone: Mission 01 — The Stolen Package
+- Third-person 3D character movement and camera
+- Procedurally assembled city street, warehouse and safehouse
+- Three hostile guards with chase and melee AI
+- Hitscan combat
+- Mission progression: reach warehouse, defeat guards, collect package, escape to safehouse
+- On-screen Android movement and action controls
+- No network permission; designed for offline play
 
-## Features
-- Tile-based NYC map (Financial District, Midtown, Central Park)
-- On-screen joystick movement with building/water collision
-- In-game phone system with mission tracking
-- Redeem codes menu (speed boost, god mode toggle)
-- Mission system with location-based objectives
+## Controls
+Desktop: WASD or arrow keys to move, F to fire, E or Space to interact.
+Android: on-screen direction buttons, FIRE and ACTION.
 
-## Requirements
-- minSdkVersion 19 (Android 4.4 KitKat and up)
-- Built with Gradle, no external dependencies
+## Build
+Open project.godot in Godot 4.5.1 or later. Android export requires matching Godot export templates and Android SDK. GitHub Actions exports build/GangsterNewYork.apk and uploads it as an artifact.
 
-## Building
-This project builds via GitHub Actions — push to this repo and the
-workflow compiles the APK automatically. Built APKs are available under
-the Actions tab after each run.
+Android package: com.nexusdev.gny
 
-To build locally instead:
-## Status
-Work in progress — personal/hobby project.
-
-## License
-Personal project — all original code here is provided as-is for
-educational and personal use
-
-
-## 3D OpenGL engine
-
-A separate Java / LibGDX / OpenGL ES 3.0 engine prototype is available in [engine/](engine/). It adds a third-person 3D New York starter district, original low-poly OBJ models, a basic drivable sedan and Android touch controls. See [engine/README.md](engine/README.md). GitHub Actions workflow: [Build GNY OpenGL Android APK](.github/workflows/build-opengl-android.yml).
-
-**Status note:** the 3D track is an early prototype. The seven-region connected world, full traffic and pedestrian AI, advanced missions and animation are not yet complete.
+This is an early playable foundation, not a finished commercial open-world game. Vehicle driving, animations, police pursuit, audio, larger city areas and more missions are planned next.
