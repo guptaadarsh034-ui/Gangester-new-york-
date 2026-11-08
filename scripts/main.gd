@@ -11,6 +11,10 @@ var health_label: Label
 var phone_panel: PanelContainer
 var phone_gps_label: Label
 var phone_status_label: Label
+var drivable_car: CharacterBody3D
+var in_vehicle := false
+var vehicle_speed := 0.0
+var vehicle_hint: Label
 
 func _ready() -> void:
 	_input_setup()
@@ -22,6 +26,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player): return
+	_update_vehicle(get_process_delta_time())
 	health_label.text = "♥  %d" % player.health
 	if is_instance_valid(phone_gps_label): phone_gps_label.text = objective_label.text
 	if player.health <= 0 and stage < 3:
@@ -110,6 +115,7 @@ func _city() -> void:
 	_box("Safehouse",Vector3(0,2.5,29),Vector3(15,5,9),Color(0.48,0.28,0.19),false)
 	_box("SafehouseRoof",Vector3(0,5.1,29),Vector3(15.6,0.35,9.6),Color(0.16,0.17,0.2),false)
 	_vehicle_prop(Vector3(-6,0.15,7),Color(0.12,0.35,0.72))
+	_create_drivable_car(Vector3(-6,0.1,7))
 	_vehicle_prop(Vector3(6,0.15,-5),Color(0.72,0.19,0.12))
 	_vehicle_prop(Vector3(-6,0.15,-31),Color(0.82,0.68,0.18))
 	_build_neighborhood_extension()
@@ -302,6 +308,7 @@ func _hud() -> void:
 	var act := _button(ui,"ACTION",Vector2(-135,-198),Vector2(112,78),true,"")
 	act.pressed.connect(_interact)
 	var hint := _label(ui,"WASD / TOUCH TO MOVE     •     FIRE TO SHOOT",Vector2(-330,-28),13)
+	vehicle_hint = _label(ui,"Walk up to the blue car and tap ACTION to drive",Vector2(28,122),15)
 	hint.anchor_left = 1.0
 	hint.anchor_right = 1.0
 	_phone_ui(ui)
@@ -349,6 +356,73 @@ func _interact() -> void:
 	Input.action_press("interact")
 	await get_tree().create_timer(0.15).timeout
 	Input.action_release("interact")
+
+
+func _create_drivable_car(pos: Vector3) -> void:
+	drivable_car = CharacterBody3D.new()
+	drivable_car.name = "Carl's Car"
+	drivable_car.position = pos
+	var body_mesh := MeshInstance3D.new()
+	var body_shape := BoxMesh.new()
+	body_shape.size = Vector3(2.25, 0.8, 4.2)
+	body_shape.material = _mat(Color(0.12,0.35,0.72),0.42,0.25)
+	body_mesh.mesh = body_shape
+	body_mesh.position.y = 0.75
+	drivable_car.add_child(body_mesh)
+	var cabin := MeshInstance3D.new()
+	var cabin_shape := BoxMesh.new()
+	cabin_shape.size = Vector3(1.72,0.8,2.0)
+	cabin_shape.material = _mat(Color(0.08,0.16,0.22),0.25,0.15)
+	cabin.mesh = cabin_shape
+	cabin.position = Vector3(0,1.42,-0.15)
+	drivable_car.add_child(cabin)
+	for x in [-1.0,1.0]:
+		for z in [-1.35,1.35]:
+			var wheel := MeshInstance3D.new()
+			var wheel_mesh := CylinderMesh.new()
+			wheel_mesh.top_radius = 0.42
+			wheel_mesh.bottom_radius = 0.42
+			wheel_mesh.height = 0.28
+			wheel_mesh.material = _mat(Color(0.025,0.03,0.04))
+			wheel.mesh = wheel_mesh
+			wheel.rotation_degrees.z = 90
+			wheel.position = Vector3(x*1.12,0.48,z)
+			drivable_car.add_child(wheel)
+	var collision := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.2,1.6,4.1)
+	collision.shape = box
+	collision.position.y = 0.8
+	drivable_car.add_child(collision)
+	add_child(drivable_car)
+
+func _update_vehicle(delta: float) -> void:
+	if not is_instance_valid(drivable_car) or not is_instance_valid(player): return
+	if not in_vehicle:
+		if player.global_position.distance_to(drivable_car.global_position) < 3.4 and Input.is_action_just_pressed("interact"):
+			in_vehicle = true
+			player.in_vehicle = true
+			player.global_position = drivable_car.global_position
+			vehicle_speed = 0.0
+			vehicle_hint.text = "DRIVING: WASD / TOUCH to steer • ACTION to exit"
+		return
+	if Input.is_action_just_pressed("interact"):
+		in_vehicle = false
+		player.in_vehicle = false
+		player.global_position = drivable_car.global_position + drivable_car.global_transform.basis.x * 2.2
+		vehicle_hint.text = "Walk up to the blue car and tap ACTION to drive"
+		return
+	var throttle := Input.get_action_strength("move_back") - Input.get_action_strength("move_forward")
+	var steering := Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+	vehicle_speed = move_toward(vehicle_speed, throttle * 13.0, 10.0 * delta)
+	if absf(vehicle_speed) > 0.25:
+		drivable_car.rotation.y -= steering * 1.65 * delta * signf(vehicle_speed)
+	var forward := -drivable_car.global_transform.basis.z
+	drivable_car.velocity.x = forward.x * vehicle_speed
+	drivable_car.velocity.z = forward.z * vehicle_speed
+	drivable_car.velocity.y = -22.0 * delta if not drivable_car.is_on_floor() else 0.0
+	drivable_car.move_and_slide()
+	player.global_position = drivable_car.global_position
 
 func _guard_count() -> int:
 	var count := 0
