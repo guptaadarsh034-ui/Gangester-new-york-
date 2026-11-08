@@ -7,9 +7,9 @@ config/features=PackedStringArray("4.5", "GL Compatibility")
 config/description="Offline 3D third-person action game."
 
 [display]
-window/size/viewport_width=1280
-window/size/viewport_height=720
-window/handheld/orientation=1
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/handheld/orientation=0
 window/stretch/mode="canvas_items"
 
 [rendering]
