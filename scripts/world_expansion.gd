@@ -96,6 +96,7 @@ func _load_region(index: int, announce: bool) -> void:
 			if active_region == 0 and x == 0 and z == 0: continue
 			var key: String = "%d:%d:%d" % [active_region,x,z]
 			loaded_chunks[key] = _make_chunk(active_region,x,z)
+	if is_instance_valid(status_label): status_label.text = "%s  •  WANTED: ☆☆☆☆☆" % REGIONS[active_region].name.to_upper()
 	if announce:
 		var region_name: String = REGIONS[active_region].name
 		radio_message.emit("TRAVEL CONTROL: Arrived in %s. Local services available." % region_name)
@@ -166,7 +167,7 @@ func _make_building(root: Node3D, pos: Vector3, size: Vector3, color: Color, sty
 		for side in [-1.0,1.0]:
 			for col in range(2):
 				var z: float = pos.z+(float(col)-0.5)*size.z*0.48
-				_add_box(root,"FacadeWindow",Vector3(pos.x+side*(size.x*0.5+0.045),pos.y-size.y*0.5+1.8+float(floor)*3.2,z),Vector3(0.08,1.25,1.4),_material(Color(0.12,0.23,0.31) if (floor+col+seed)%3 else Color(0.64,0.55,0.37)),false)
+				_add_box(root,"FacadeWindow",Vector3(pos.x+side*(size.x*0.5+0.045),pos.y-size.y*0.5+1.8+float(floor)*3.2,z),Vector3(0.08,1.25,1.4),_material(Color(0.12,0.23,0.31) if (floor+col+seed)%3 == 0 else Color(0.64,0.55,0.37)),false)
 		for col in range(2):
 			var x: float = pos.x+(float(col)-0.5)*size.x*0.48
 			_add_box(root,"StreetWindow",Vector3(x,pos.y-size.y*0.5+1.8+float(floor)*3.2,pos.z-size.z*0.5-0.05),Vector3(1.35,1.25,0.08),_material(Color(0.12,0.22,0.3)),false)
