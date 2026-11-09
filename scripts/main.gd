@@ -148,7 +148,7 @@ func _process(delta: float) -> void:
 		_refresh()
 
 func _input_setup() -> void:
-	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_CTRL],"aim":[KEY_ALT]}
+	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_F],"aim":[KEY_Q]}
 	for action in map:
 		if not InputMap.has_action(action): InputMap.add_action(action)
 		for code in map[action]:
