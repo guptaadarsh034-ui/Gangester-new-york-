@@ -141,10 +141,13 @@ func shoot() -> void:
 		muzzle_flash.visible = true
 		var flash_tween := create_tween()
 		flash_tween.tween_interval(0.075)
-		flash_tween.tween_callback(func(): if is_instance_valid(muzzle_flash): muzzle_flash.visible = false)
+		flash_tween.tween_callback(_hide_muzzle_flash)
 	var origin := camera.global_position
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + -camera.global_transform.basis.z * 70.0)
 	query.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty() and hit.collider.has_method("take_damage"):
 		hit.collider.take_damage(50)
+
+func _hide_muzzle_flash() -> void:
+	if is_instance_valid(muzzle_flash): muzzle_flash.visible = false
