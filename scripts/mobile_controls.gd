@@ -195,7 +195,7 @@ func _draw_overlay(canvas: Control) -> void:
 		var fill := Color(0.58,0.16,0.07,0.92) if active else Color(0.025,0.06,0.10,0.78)
 		canvas.draw_rect(rect,fill,true)
 		canvas.draw_rect(rect,Color(0.96,0.7,0.35,0.95),false,3.0)
-		var label := action.to_upper()
+		var label: String = str(action).to_upper()
 		var font := ThemeDB.fallback_font
 		var font_size := 22
 		canvas.draw_string(font,rect.position+Vector2((rect.size.x-font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x)*0.5,rect.size.y*0.58),label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Color.WHITE)
