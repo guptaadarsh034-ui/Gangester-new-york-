@@ -1,6 +1,7 @@
 extends Node3D
 const PLAYER = preload("res://scripts/player.gd")
 const ENEMY = preload("res://scripts/enemy.gd")
+const GRAPHICS = preload("res://scripts/graphics_upgrade.gd")
 var player: CharacterBody3D
 var guards: Array[Node3D] = []
 var parcel: Node3D
@@ -21,6 +22,7 @@ func _ready() -> void:
 	_city()
 	_make_player()
 	_mission()
+	GRAPHICS.apply(self)
 	_hud()
 	_refresh()
 
