@@ -51,58 +51,66 @@ func _layout() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
-		if event.pressed: _touch_begin(event.index,event.position)
-		else: _touch_end(event.index)
-		get_viewport().set_input_as_handled()
+		var captured := _touch_begin(event.index,event.position) if event.pressed else _touch_end(event.index)
+		if captured: get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
-		_touch_drag(event.index,event.position,event.relative)
-		get_viewport().set_input_as_handled()
+		if _touch_drag(event.index,event.position,event.relative): get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed: _touch_begin(-2,event.position)
-		else: _touch_end(-2)
-		get_viewport().set_input_as_handled()
+		var captured := _touch_begin(-2,event.position) if event.pressed else _touch_end(-2)
+		if captured: get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
-		if mouse_stick: _update_stick(event.position)
-		elif mouse_look: _update_look(-2,event.position,event.relative)
-		get_viewport().set_input_as_handled()
+		if mouse_stick:
+			_update_stick(event.position)
+			get_viewport().set_input_as_handled()
+		elif mouse_look:
+			_update_look(-2,event.position,event.relative)
+			get_viewport().set_input_as_handled()
 
-func _touch_begin(finger: int, point: Vector2) -> void:
+func _touch_begin(finger: int, point: Vector2) -> bool:
 	if finger == -2:
 		if _inside_stick(point):
 			mouse_stick = true
 			stick_finger = finger
 			_update_stick(point)
-			return
+			return true
 		var action := _button_at(point)
 		if action != "":
 			mouse_buttons.append(action)
 			_press_action(action,finger)
-			return
-		if point.x > get_viewport().get_visible_rect().size.x*0.42:
+			return true
+		var s := get_viewport().get_visible_rect().size
+		if point.x > s.x*0.42 and point.y > s.y*0.16 and point.y < s.y*0.76:
 			mouse_look = true
 			look_finger = finger
 			look_last = point
-		return
+			return true
+		return false
 	if stick_finger == -1 and _inside_stick(point):
 		stick_finger = finger
 		_update_stick(point)
-		return
+		return true
 	var action := _button_at(point)
 	if action != "":
 		_press_action(action,finger)
-		return
-	var width := get_viewport().get_visible_rect().size.x
-	if look_finger == -1 and point.x > width*0.42:
+		return true
+	var s := get_viewport().get_visible_rect().size
+	if look_finger == -1 and point.x > s.x*0.42 and point.y > s.y*0.16 and point.y < s.y*0.76:
 		look_finger = finger
 		look_last = point
+		return true
+	return false
 
-func _touch_drag(finger: int, point: Vector2, relative: Vector2) -> void:
+func _touch_drag(finger: int, point: Vector2, relative: Vector2) -> bool:
 	if finger == stick_finger:
 		_update_stick(point)
+		return true
 	elif finger == look_finger:
 		_update_look(finger,point,relative)
+		return true
+	return button_fingers.values().any(func(v): return (v as Dictionary).has(finger))
 
-func _touch_end(finger: int) -> void:
+func _touch_end(finger: int) -> bool:
+	var captured := finger == stick_finger or finger == look_finger
 	if finger == stick_finger:
 		stick_finger = -1
 		mouse_stick = false
@@ -115,10 +123,12 @@ func _touch_end(finger: int) -> void:
 	for action in button_fingers.keys():
 		var fingers: Dictionary = button_fingers[action]
 		if fingers.has(finger):
+			captured = true
 			fingers.erase(finger)
 			if fingers.is_empty():
 				button_fingers.erase(action)
 				_release_action(action)
+	return captured
 
 func _inside_stick(point: Vector2) -> bool:
 	return point.distance_to(stick_center) < STICK_RADIUS*2.0
