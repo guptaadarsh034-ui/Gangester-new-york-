@@ -10,6 +10,11 @@ var camera_pivot: Node3D
 var camera_yaw: float = 0.0
 var camera_pitch: float = -13.0
 var in_vehicle: bool = false
+var left_arm: Node3D
+var right_arm: Node3D
+var left_leg: Node3D
+var right_leg: Node3D
+var walk_clock: float = 0.0
 
 func _ready() -> void:
 	camera_pivot = Node3D.new()
@@ -23,6 +28,10 @@ func _ready() -> void:
 	camera.fov = 72.0
 	camera.current = true
 	camera_pivot.add_child(camera)
+	left_arm = get_node_or_null("Arm_-1") as Node3D
+	right_arm = get_node_or_null("Arm_1") as Node3D
+	left_leg = get_node_or_null("Leg_-1") as Node3D
+	right_leg = get_node_or_null("Leg_1") as Node3D
 
 func apply_look(delta_pixels: Vector2) -> void:
 	camera_yaw -= delta_pixels.x * 0.0045
@@ -56,6 +65,12 @@ func _physics_process(delta: float) -> void:
 	camera.fov = lerpf(camera.fov, 54.0 if Input.is_action_pressed("aim") else 72.0, 9.0 * delta)
 	if Input.is_action_pressed("fire"):
 		shoot()
+	var stride := clampf(Vector2(velocity.x, velocity.z).length() / (move_speed * sprint_multiplier), 0.0, 1.0)
+	walk_clock += delta * (10.0 if Input.is_action_pressed("sprint") else 7.0)
+	if left_arm: left_arm.rotation.x = sin(walk_clock) * 0.48 * stride
+	if right_arm: right_arm.rotation.x = -sin(walk_clock) * 0.48 * stride
+	if left_leg: left_leg.rotation.x = -sin(walk_clock) * 0.58 * stride
+	if right_leg: right_leg.rotation.x = sin(walk_clock) * 0.58 * stride
 	move_and_slide()
 
 func take_damage(amount: int) -> void:
