@@ -54,9 +54,9 @@ jobs:
       - name: Fetch licensed CC0 city art assets
         run: |
           mkdir -p /tmp/kenney assets/kenney/city-suburban assets/kenney/city-roads
-          curl -fL --retry 5 --retry-all-errors --retry-delay 4 --connect-timeout 30 --max-time 600 https://codeload.github.com/petroulacl/fps-buildings-env-kit/zip/refs/heads/main -o /tmp/kenney-assets.zip
+          curl -fL --retry 5 --retry-all-errors --retry-delay 4 --connect-timeout 30 --max-time 600 https://codeload.github.com/petroulacl/fps-buildings-env-kit/zip/1dd8e932402deb82422920df2e7fd079391e55d3 -o /tmp/kenney-assets.zip
           unzip -q /tmp/kenney-assets.zip \
-            'fps-buildings-env-kit-main/buildings/kenney-city-kit-suburban/Models/GLB format/*' \
+            'fps-buildings-env-kit-1dd8e932402deb82422920df2e7fd079391e55d3/buildings/kenney-city-kit-suburban/Models/GLB format/*' \
             'fps-buildings-env-kit-main/buildings/kenney-city-kit-suburban/License.txt' \
             'fps-buildings-env-kit-main/props/kenney-city-kit-roads/Models/GLB format/*' \
             'fps-buildings-env-kit-main/props/kenney-city-kit-roads/License.txt' \
