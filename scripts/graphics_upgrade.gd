@@ -108,6 +108,21 @@ static func _upgrade_player_car(world: Node3D, car: Node3D) -> void:
 	# Hood crease and rear deck details.
 	_mesh_box(car, "HoodAccent", Vector3(0, 1.17, -1.42), Vector3(0.055, 0.018, 1.05), chrome, 0.3, 0.65)
 	_mesh_box(car, "RearPlate", Vector3(0, 0.77, 2.145), Vector3(0.62, 0.22, 0.025), Color(0.82, 0.84, 0.78), 0.45, 0.1)
+	# Glazing, grille, door seams and wheel hubs make the blockout read as a street car.
+	_mesh_box(car, "FrontWindshield", Vector3(0, 1.48, -1.16), Vector3(1.58, 0.58, 0.055), Color(0.025, 0.09, 0.14), 0.18, 0.18)
+	_mesh_box(car, "RearWindshield", Vector3(0, 1.48, 0.87), Vector3(1.55, 0.55, 0.055), glass, 0.18, 0.12)
+	_mesh_box(car, "FrontGrille", Vector3(0, 0.76, -2.135), Vector3(0.92, 0.28, 0.035), Color(0.025, 0.032, 0.04), 0.35, 0.5)
+	_mesh_box(car, "FrontBadge", Vector3(0, 0.91, -2.16), Vector3(0.18, 0.09, 0.025), Color(0.85, 0.67, 0.32), 0.25, 0.8)
+	for side in [-1.0, 1.0]:
+		_mesh_box(car, "FrontSideGlass", Vector3(side * 0.88, 1.48, -0.65), Vector3(0.045, 0.55, 0.78), glass, 0.18, 0.1)
+		_mesh_box(car, "RearSideGlass", Vector3(side * 0.88, 1.48, 0.35), Vector3(0.045, 0.55, 0.7), glass, 0.18, 0.1)
+		_mesh_box(car, "DoorHandle", Vector3(side * 1.14, 1.08, 0.05), Vector3(0.035, 0.07, 0.28), chrome, 0.3, 0.7)
+		_mesh_box(car, "SideSkirt", Vector3(side * 1.09, 0.42, 0.05), Vector3(0.12, 0.16, 2.25), Color(0.07, 0.09, 0.12), 0.4, 0.35)
+		for z in [-1.35, 1.35]:
+			var hub := _mesh_cylinder(car, "AlloyWheelHub", Vector3(side * 1.255, 0.48, z), 0.22, 0.045, chrome)
+			hub.rotation_degrees.z = 90
+			var hub_center := _mesh_cylinder(car, "WheelCenter", Vector3(side * 1.285, 0.48, z), 0.075, 0.055, Color(0.12, 0.15, 0.18))
+			hub_center.rotation_degrees.z = 90
 
 static func _upgrade_player(world: Node3D) -> void:
 	var player := world.get_node_or_null("Player") as Node3D
@@ -118,6 +133,9 @@ static func _upgrade_player(world: Node3D) -> void:
 	_mesh_box(player, "JacketCollar", Vector3(0, 1.62, -0.02), Vector3(0.52, 0.16, 0.42), jacket)
 	_mesh_box(player, "JacketHem", Vector3(0, 0.72, 0), Vector3(0.58, 0.12, 0.42), jacket.darkened(0.22))
 	_mesh_box(player, "UtilityBelt", Vector3(0, 0.78, -0.015), Vector3(0.62, 0.09, 0.43), leather, 0.48, 0.25)
+	_mesh_box(player, "Backpack", Vector3(0, 1.22, 0.27), Vector3(0.48, 0.66, 0.28), Color(0.055, 0.075, 0.09), 0.9, 0.0)
+	_mesh_box(player, "BackpackFlap", Vector3(0, 1.48, 0.43), Vector3(0.38, 0.16, 0.035), Color(0.12, 0.16, 0.19), 0.82, 0.0)
+	_mesh_box(player, "Holster", Vector3(0.31, 0.78, -0.08), Vector3(0.18, 0.3, 0.22), leather, 0.7, 0.0)
 	for side in [-1.0, 1.0]:
 		_mesh_box(player, "ShoulderSeam", Vector3(side * 0.34, 1.43, 0), Vector3(0.13, 0.2, 0.42), jacket.lightened(0.12))
 		_mesh_box(player, "Boot", Vector3(side * 0.18, 0.08, -0.07), Vector3(0.25, 0.18, 0.42), leather, 0.5, 0.05)
@@ -130,6 +148,12 @@ static func _upgrade_player(world: Node3D) -> void:
 	hair_node.mesh = hair
 	hair_node.position = Vector3(0, 2.12, 0)
 	player.add_child(hair_node)
+	_mesh_box(player, "EyebrowLeft", Vector3(-0.105, 1.98, -0.235), Vector3(0.13, 0.035, 0.035), Color(0.08, 0.045, 0.03))
+	_mesh_box(player, "EyebrowRight", Vector3(0.105, 1.98, -0.235), Vector3(0.13, 0.035, 0.035), Color(0.08, 0.045, 0.03))
+	_mesh_box(player, "EyeLeft", Vector3(-0.105, 1.91, -0.247), Vector3(0.055, 0.045, 0.025), Color(0.92, 0.86, 0.72))
+	_mesh_box(player, "EyeRight", Vector3(0.105, 1.91, -0.247), Vector3(0.055, 0.045, 0.025), Color(0.92, 0.86, 0.72))
+	_mesh_box(player, "EyePupilLeft", Vector3(-0.105, 1.91, -0.265), Vector3(0.022, 0.032, 0.012), Color(0.035, 0.025, 0.02))
+	_mesh_box(player, "EyePupilRight", Vector3(0.105, 1.91, -0.265), Vector3(0.022, 0.032, 0.012), Color(0.035, 0.025, 0.02))
 
 static func _add_street_details(world: Node3D) -> void:
 	# Manhole covers, hydrants and protective bollards give the street scale and texture.
@@ -144,3 +168,12 @@ static func _add_street_details(world: Node3D) -> void:
 			_mesh_cylinder(world, "HydrantCap", Vector3(x, 1.02, z), 0.29, 0.13, Color(0.82, 0.12, 0.055))
 			for offset in [-0.7, 0.7]:
 				_mesh_cylinder(world, "StreetBollard", Vector3(side * 9.0, 0.55, z + offset), 0.12, 1.0, Color(0.18, 0.2, 0.22))
+	# Street furniture creates readable scale at pedestrian height.
+	for side in [-1.0, 1.0]:
+		for z in [-35.0, -5.0, 25.0]:
+			var bin_x := side * 10.4
+			_mesh_cylinder(world, "CityTrashCan", Vector3(bin_x, 0.62, z), 0.34, 1.15, Color(0.12, 0.16, 0.18))
+			_mesh_cylinder(world, "TrashCanRim", Vector3(bin_x, 1.19, z), 0.37, 0.08, Color(0.36, 0.4, 0.42))
+			_mesh_box(world, "TrashCanSlot", Vector3(bin_x, 0.9, z - 0.32), Vector3(0.25, 0.08, 0.025), Color(0.025, 0.03, 0.035))
+			_mesh_box(world, "StreetBenchSeat", Vector3(side * 12.4, 0.62, z + 3.0), Vector3(1.7, 0.14, 0.48), Color(0.28, 0.18, 0.1))
+			_mesh_box(world, "StreetBenchBack", Vector3(side * 12.4, 1.05, z + 3.22), Vector3(1.7, 0.72, 0.12), Color(0.28, 0.18, 0.1))
