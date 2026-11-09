@@ -1,4 +1,5 @@
 extends Node3D
+const POLICE = preload("res://scripts/police_officer.gd")
 ## Streamed regional world, transport terminals, shops and police dispatch.
 signal radio_message(message: String)
 signal region_changed(region_name: String)
@@ -217,6 +218,39 @@ func _make_transport_hub(root: Node3D, origin: Vector3, style: int) -> void:
 	_add_box(root,"PoliceStation",origin+Vector3(-62,3,62),Vector3(28,6,22),_material(Color(0.16,0.22,0.3)),true)
 	_add_box(root,"PoliceSign",origin+Vector3(-62,6.5,50.5),Vector3(12,1,0.3),_material(Color(0.08,0.26,0.62)),false)
 
+func _make_regional_landmark(root: Node3D, origin: Vector3, style: int) -> void:
+	match style:
+		1:
+			# Stylised Golden Gate bridge: twin towers, deck and suspension cables.
+			_add_box(root,"BayBridgeDeck",origin+Vector3(105,18,145),Vector3(150,2.2,12),_material(Color(0.72,0.25,0.12)),true)
+			for x in [42.0,168.0]:
+				_add_box(root,"BayBridgeTower",origin+Vector3(x,43,145),Vector3(5,52,6),_material(Color(0.78,0.28,0.13)),true)
+				_add_box(root,"BayBridgeCrossbar",origin+Vector3(x,60,145),Vector3(10,3,7),_material(Color(0.78,0.28,0.13)),false)
+			for z in range(95,196,12):
+				_add_box(root,"BridgeCable",origin+Vector3(105,29,float(z)),Vector3(0.18,23,0.18),_material(Color(0.78,0.62,0.48)),false)
+		2:
+			_add_box(root,"BigBenTower",origin+Vector3(108,31,145),Vector3(12,62,12),_material(Color(0.55,0.48,0.37)),true)
+			_add_box(root,"ClockFace",origin+Vector3(108,47,138.6),Vector3(5,5,0.3),_material(Color(0.88,0.82,0.62)),false)
+			_add_box(root,"TowerBridgeDeck",origin+Vector3(55,8,95),Vector3(100,2,12),_material(Color(0.32,0.4,0.48)),true)
+			for x in [12.0,98.0]:
+				_add_box(root,"TowerBridgePier",origin+Vector3(x,19,95),Vector3(8,38,10),_material(Color(0.48,0.4,0.32)),true)
+		3:
+			_add_box(root,"CastleRock",origin+Vector3(105,12,150),Vector3(75,24,50),_material(Color(0.27,0.29,0.3)),true)
+			_add_box(root,"EdinburghCastleKeep",origin+Vector3(105,30,150),Vector3(22,36,18),_material(Color(0.4,0.38,0.34)),true)
+			for x in [95.0,115.0]:
+				_add_box(root,"CastleTower",origin+Vector3(x,42,142),Vector3(7,22,7),_material(Color(0.38,0.35,0.31)),true)
+		4:
+			_add_box(root,"KentWindmillBase",origin+Vector3(105,9,145),Vector3(12,18,12),_material(Color(0.76,0.7,0.57)),true)
+			for angle in [0.0,90.0,180.0,270.0]:
+				var blade := _add_box(root,"WindmillBlade",origin+Vector3(105,22,138),Vector3(1.2,18,0.4),_material(Color(0.92,0.88,0.78)),false)
+				blade.rotation_degrees.z = angle
+		5:
+			_add_box(root,"GloucesterCathedralNave",origin+Vector3(105,10,145),Vector3(60,20,26),_material(Color(0.62,0.55,0.44)),true)
+			_add_box(root,"GloucesterCathedralTower",origin+Vector3(105,31,145),Vector3(16,42,16),_material(Color(0.58,0.5,0.4)),true)
+		6:
+			_add_box(root,"SussexSeafront",origin+Vector3(105,0.1,180),Vector3(170,0.3,40),_material(Color(0.2,0.42,0.55)),false)
+			_add_box(root,"SussexPier",origin+Vector3(105,4,145),Vector3(80,1,8),_material(Color(0.42,0.3,0.2)),true)
+
 func _material(color: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
@@ -274,6 +308,7 @@ func _dispatch_units() -> void:
 	var desired: int = mini(wanted_level,5)
 	while police_units.size() < desired:
 		var unit := CharacterBody3D.new()
+		unit.set_script(POLICE)
 		unit.name = "PolicePatrol"
 		var mesh := MeshInstance3D.new()
 		var capsule := CapsuleMesh.new()
@@ -299,8 +334,10 @@ func _dispatch_units() -> void:
 	radio_message.emit("POLICE RADIO: %d patrol unit(s) responding. Avoid the search area." % police_units.size())
 
 func _update_police(delta: float) -> void:
+	var active_units: Array[CharacterBody3D] = []
 	for unit in police_units:
 		if not is_instance_valid(unit): continue
+		active_units.append(unit)
 		var direction: Vector3 = player.global_position-unit.global_position
 		direction.y = 0.0
 		if direction.length() > 3.0:
@@ -315,6 +352,7 @@ func _update_police(delta: float) -> void:
 				player.take_damage(4)
 		unit.velocity.y = -20.0*delta if not unit.is_on_floor() else 0.0
 		unit.move_and_slide()
+	police_units = active_units
 
 func clear_wanted() -> void:
 	crime_points = 0.0
@@ -342,7 +380,7 @@ func _build_ui(parent: Node) -> void:
 	root.add_child(map_button)
 	map_button.pressed.connect(_open_travel)
 	status_label = Label.new()
-	status_label.text = "NEW YORK CITY  •  WANTED: ☆☆☆☆☆"
+	status_label.text = "%s  •  WANTED: ☆☆☆☆☆" % REGIONS[active_region].name.to_upper()
 	status_label.position = Vector2(28,150)
 	status_label.add_theme_font_size_override("font_size",16)
 	root.add_child(status_label)
