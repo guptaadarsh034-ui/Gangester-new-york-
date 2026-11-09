@@ -148,7 +148,7 @@ func _process(delta: float) -> void:
 		_refresh()
 
 func _input_setup() -> void:
-	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E,KEY_SPACE],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_CTRL],"aim":[KEY_ALT]}
+	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_CTRL],"aim":[KEY_ALT]}
 	for action in map:
 		if not InputMap.has_action(action): InputMap.add_action(action)
 		for code in map[action]:
@@ -359,6 +359,7 @@ func _character_visual(body: CharacterBody3D,color: Color,radius: float) -> void
 		limb.height = 0.85
 		limb.material = _mat(color.darkened(0.2))
 		arm.mesh = limb
+		arm.name = "Arm_%d" % side
 		arm.position = Vector3(side*0.42,1.15,0)
 		arm.rotation.z = deg_to_rad(side*10)
 		body.add_child(arm)
@@ -368,8 +369,25 @@ func _character_visual(body: CharacterBody3D,color: Color,radius: float) -> void
 		leg_mesh.height = 0.8
 		leg_mesh.material = _mat(Color(0.07,0.08,0.1))
 		leg.mesh = leg_mesh
+		leg.name = "Leg_%d" % side
 		leg.position = Vector3(side*0.18,0.42,0)
 		body.add_child(leg)
+	# A compact sidearm silhouette is attached to the right hand for the combat mission.
+	var pistol := MeshInstance3D.new()
+	pistol.name = "Sidearm"
+	var pistol_mesh := BoxMesh.new()
+	pistol_mesh.size = Vector3(0.13, 0.16, 0.48)
+	pistol_mesh.material = _mat(Color(0.045, 0.055, 0.065), 0.34, 0.72)
+	pistol.mesh = pistol_mesh
+	pistol.position = Vector3(0.55, 1.02, -0.24)
+	body.add_child(pistol)
+	var grip := MeshInstance3D.new()
+	var grip_mesh := BoxMesh.new()
+	grip_mesh.size = Vector3(0.12, 0.24, 0.16)
+	grip_mesh.material = _mat(Color(0.10, 0.075, 0.055))
+	grip.mesh = grip_mesh
+	grip.position = Vector3(0.55, 0.83, -0.12)
+	body.add_child(grip)
 	var col := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.radius=radius
