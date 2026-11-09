@@ -118,7 +118,7 @@ func _start_game() -> void:
 	_hud()
 	mobile_controls = MOBILE.new()
 	add_child(mobile_controls)
-	mobile_controls.look_zone.dragged.connect(player.apply_look)
+	mobile_controls.look_dragged.connect(player.apply_look)
 	world_system = WORLD.new()
 	add_child(world_system)
 	world_system.initialize(player,self)
