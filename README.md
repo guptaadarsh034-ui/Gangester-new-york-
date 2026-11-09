@@ -2,27 +2,31 @@
 
 An offline-first 3D Android action-game prototype built with Godot 4.5.1.
 
-## Current build: 0.3.0 (version code 3)
+## Current build: 0.4.0 (version code 4)
 
-This graphics milestone adds a procedural visual pass: facade cornices and pilasters, rooftop HVAC props, street furniture, hydrants, manhole details, car bumpers and lamps, character clothing details, and tuned filmic lighting, contrast, saturation and fog. It remains an original low-poly/procedural Android game and is not yet equivalent to Payback 2 asset quality.
+This milestone adds a touch-first gameplay layer, analog movement joystick, right-side camera drag, hold-to-fire and aim, sprint and jump buttons, a main menu, and a staged city/game loading screen. The player now has camera-relative movement, sprinting, jumping, aiming zoom and a basic procedural walk/run animation. The procedural graphics pass adds vehicle glazing, wheel hubs, player gear and more street furniture.
+
+The renderer remains Godot's mobile-compatible GL Compatibility renderer. This project currently uses procedural geometry rather than licensed, production-grade character/car/environment asset packs, so it should be treated as a stronger playable prototype—not a claim of Payback 2 visual parity.
 
 ## Playable milestone: Mission 01 — The Stolen Package
-- Third-person 3D character movement and camera
-- Procedurally assembled city street, warehouse and safehouse
+- Third-person character movement and touch camera control
+- Analog mobile joystick, fire, aim, action, jump and sprint controls
+- Main menu and in-game loading screen
+- Procedurally assembled New York-style district, warehouse and safehouse
 - Three hostile guards with chase and melee AI
 - Hitscan combat
 - Mission progression: reach warehouse, defeat guards, collect package, escape to safehouse
-- On-screen Android movement and action controls
+- Drivable car
+- Smartphone/GPS panel
 - No network permission; designed for offline play
-- Graphics milestone 0.3.0: improved city facades, rooftops, street props, vehicle detailing, character detailing and environment grading
 
 ## Controls
-Desktop: WASD or arrow keys to move, F to fire, E or Space to interact.
-Android: on-screen direction buttons, FIRE and ACTION.
+Desktop: WASD/arrow keys to move, F to fire, Q to aim, Shift to sprint, Space to jump, E to interact.
+Android: left analog joystick to move, drag the right side to rotate the camera, and use FIRE, AIM, ACTION, JUMP and SPRINT.
 
 ## Build
 Open project.godot in Godot 4.5.1 or later. Android export requires matching Godot export templates and Android SDK. GitHub Actions exports build/GangsterNewYork.apk and uploads it as an artifact.
 
 Android package: com.nexusdev.gny
 
-This is an early playable foundation, not a finished commercial open-world game. Vehicle driving, animations, police pursuit, audio, larger city areas and more missions are planned next.
+This remains an early playable foundation. Production-quality art, full animation rigs, traffic/pedestrian systems, police pursuit, audio, more interiors and additional missions still require further work and testing on target phones.
