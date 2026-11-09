@@ -10,6 +10,7 @@ class Joystick extends Control:
 
 	func _ready() -> void:
 		custom_minimum_size = Vector2(200, 200)
+		size = Vector2(200, 200)
 		mouse_filter = Control.MOUSE_FILTER_STOP
 		queue_redraw()
 
