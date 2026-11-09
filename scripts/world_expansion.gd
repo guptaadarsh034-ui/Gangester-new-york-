@@ -29,6 +29,8 @@ var crime_points: float = 0.0
 var dispatch_timer: float = 0.0
 var police_units: Array[CharacterBody3D] = []
 var taxi_active: bool = false
+var travel_by_air: bool = true
+var destination_buttons: Array[Button] = []
 var in_shop: bool = false
 var shop_entries: Array[Dictionary] = []
 var active_shop: Dictionary = {}
@@ -419,24 +421,39 @@ func _build_ui(parent: Node) -> void:
 	taxi.custom_minimum_size.y = 44
 	stack.add_child(taxi)
 	taxi.pressed.connect(_taxi_local)
-	var flight := Label.new()
-	flight.text = "AIRPORT FLIGHTS / LONG DISTANCE TAXI"
-	flight.add_theme_font_size_override("font_size",13)
-	stack.add_child(flight)
+	var mode_row := HBoxContainer.new()
+	stack.add_child(mode_row)
+	var flight_mode := Button.new()
+	flight_mode.text = "AIRPORT FLIGHT"
+	flight_mode.custom_minimum_size = Vector2(150,38)
+	mode_row.add_child(flight_mode)
+	flight_mode.pressed.connect(func(): travel_by_air = true; _refresh_destinations())
+	var taxi_mode := Button.new()
+	taxi_mode.text = "LONG-DISTANCE TAXI"
+	taxi_mode.custom_minimum_size = Vector2(150,38)
+	mode_row.add_child(taxi_mode)
+	taxi_mode.pressed.connect(func(): travel_by_air = false; _refresh_destinations())
 	for i in range(REGIONS.size()):
 		var button := Button.new()
 		button.text = "%s  —  %s" % [REGIONS[i].name, "CITY" if REGIONS[i].kind=="city" else "TOWN"]
 		button.custom_minimum_size.y = 42
 		stack.add_child(button)
+		destination_buttons.append(button)
 		var destination: int = i
-		button.pressed.connect(func(): travel_to(destination,true))
+		button.pressed.connect(func(): travel_to(destination,travel_by_air))
 	var close := Button.new()
 	close.text = "CLOSE MAP"
 	close.custom_minimum_size.y = 42
 	stack.add_child(close)
 	close.pressed.connect(_close_travel)
 
+func _refresh_destinations() -> void:
+	for i in range(destination_buttons.size()):
+		var method: String = "FLY" if travel_by_air else "TAXI"
+		destination_buttons[i].text = "%s TO %s" % [method,REGIONS[i].name.to_upper()]
+
 func _open_travel() -> void:
+	_refresh_destinations()
 	travel_panel.visible = true
 	get_tree().paused = false
 
