@@ -2,6 +2,7 @@ extends Node3D
 const PLAYER = preload("res://scripts/player.gd")
 const ENEMY = preload("res://scripts/enemy.gd")
 const GRAPHICS = preload("res://scripts/graphics_upgrade.gd")
+const MOBILE = preload("res://scripts/mobile_controls.gd")
 var player: CharacterBody3D
 var guards: Array[Node3D] = []
 var parcel: Node3D
@@ -16,14 +17,110 @@ var drivable_car: CharacterBody3D
 var in_vehicle := false
 var vehicle_speed := 0.0
 var vehicle_hint: Label
+var menu_layer: CanvasLayer
+var loading_layer: CanvasLayer
+var mobile_controls: CanvasLayer
 
 func _ready() -> void:
 	_input_setup()
+	_show_main_menu()
+
+func _show_main_menu() -> void:
+	menu_layer = CanvasLayer.new()
+	menu_layer.layer = 20
+	add_child(menu_layer)
+	var background := ColorRect.new()
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.color = Color(0.025, 0.045, 0.075, 1.0)
+	menu_layer.add_child(background)
+	var panel := VBoxContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -310
+	panel.offset_right = 310
+	panel.offset_top = -190
+	panel.offset_bottom = 190
+	panel.add_theme_constant_override("separation", 20)
+	menu_layer.add_child(panel)
+	var title := Label.new()
+	title.text = "GANGSTER: NEW YORK"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(1.0, 0.78, 0.43))
+	panel.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "AN OFFLINE OPEN-WORLD CRIME STORY"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 17)
+	subtitle.add_theme_color_override("font_color", Color(0.78, 0.84, 0.91))
+	panel.add_child(subtitle)
+	var start := Button.new()
+	start.text = "START GAME"
+	start.custom_minimum_size = Vector2(0, 72)
+	start.add_theme_font_size_override("font_size", 25)
+	start.add_theme_stylebox_override("normal", _button_style(Color(0.55, 0.16, 0.07, 1.0)))
+	start.pressed.connect(_start_game)
+	panel.add_child(start)
+	var note := Label.new()
+	note.text = "Touch controls • Story mission • New York district"
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_font_size_override("font_size", 15)
+	panel.add_child(note)
+
+func _start_game() -> void:
+	if is_instance_valid(menu_layer):
+		menu_layer.queue_free()
+	loading_layer = CanvasLayer.new()
+	loading_layer.layer = 30
+	add_child(loading_layer)
+	var background := ColorRect.new()
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.color = Color(0.018, 0.03, 0.05, 1.0)
+	loading_layer.add_child(background)
+	var stack := VBoxContainer.new()
+	stack.anchor_left = 0.5
+	stack.anchor_right = 0.5
+	stack.anchor_top = 0.5
+	stack.anchor_bottom = 0.5
+	stack.offset_left = -260
+	stack.offset_right = 260
+	stack.offset_top = -75
+	stack.offset_bottom = 95
+	stack.add_theme_constant_override("separation", 18)
+	loading_layer.add_child(stack)
+	var message := Label.new()
+	message.text = "BUILDING NEW YORK CITY..."
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.add_theme_font_size_override("font_size", 24)
+	stack.add_child(message)
+	var progress := ProgressBar.new()
+	progress.min_value = 0
+	progress.max_value = 100
+	progress.value = 5
+	progress.custom_minimum_size = Vector2(520, 24)
+	stack.add_child(progress)
+	await get_tree().process_frame
+	message.text = "GENERATING THE CITY"
 	_city()
+	progress.value = 35
+	await get_tree().process_frame
+	message.text = "LOADING CARL AND THE MISSION"
 	_make_player()
 	_mission()
+	progress.value = 65
+	await get_tree().process_frame
+	message.text = "PREPARING LIGHTING AND WORLD DETAILS"
 	GRAPHICS.apply(self)
 	_hud()
+	mobile_controls = MOBILE.new()
+	add_child(mobile_controls)
+	mobile_controls.look_zone.dragged.connect(player.apply_look)
+	progress.value = 100
+	message.text = "READY"
+	await get_tree().create_timer(0.45).timeout
+	loading_layer.queue_free()
 	_refresh()
 
 func _physics_process(delta: float) -> void:
@@ -51,9 +148,9 @@ func _process(delta: float) -> void:
 		_refresh()
 
 func _input_setup() -> void:
-	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E,KEY_SPACE]}
+	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E,KEY_SPACE],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_CTRL],"aim":[KEY_ALT]}
 	for action in map:
-		InputMap.add_action(action)
+		if not InputMap.has_action(action): InputMap.add_action(action)
 		for code in map[action]:
 			var e := InputEventKey.new()
 			e.physical_keycode = code
@@ -302,15 +399,7 @@ func _hud() -> void:
 	title_label=_label(ui,"GANGSTER: NEW YORK  •  CHAPTER 01",Vector2(28,18),24)
 	objective_label=_label(ui,"",Vector2(28,55),19)
 	health_label=_label(ui,"♥  100",Vector2(28,88),20)
-	_button(ui,"◀",Vector2(28,-105),Vector2(78,68),false,"move_left")
-	_button(ui,"▶",Vector2(194,-105),Vector2(78,68),false,"move_right")
-	_button(ui,"▲",Vector2(111,-174),Vector2(78,68),false,"move_forward")
-	_button(ui,"▼",Vector2(111,-91),Vector2(78,68),false,"move_back")
-	var fire := _button(ui,"FIRE",Vector2(-135,-108),Vector2(112,78),true,"")
-	fire.pressed.connect(func(): player.shoot())
-	var act := _button(ui,"ACTION",Vector2(-135,-198),Vector2(112,78),true,"")
-	act.pressed.connect(_interact)
-	var hint := _label(ui,"WASD / TOUCH TO MOVE     •     FIRE TO SHOOT",Vector2(-330,-28),13)
+	var hint := _label(ui,"LEFT STICK: MOVE   •   DRAG RIGHT SIDE: LOOK   •   FIRE / AIM / JUMP",Vector2(-520,-28),13)
 	vehicle_hint = _label(ui,"Walk up to the blue car and tap ACTION to drive",Vector2(28,122),15)
 	hint.anchor_left = 1.0
 	hint.anchor_right = 1.0
