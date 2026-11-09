@@ -30,13 +30,21 @@ jobs:
             "ndk;28.1.13356709" \
             "cmake;3.10.2.4988404"
       - name: Install Godot and matching Android templates
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/.local/share/godot/export_templates/4.5.1.stable"
-          if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip -o /tmp/godot.zip; then\n  echo "GitHub release download unavailable; using the official Godot mirror"\n  curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://downloads.tuxfamily.org/godotengine/4.5.1/Godot_v4.5.1-stable_linux.x86_64.zip -o /tmp/godot.zip\nfi
+          GODOT_URL="https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip"
+          if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 "$GODOT_URL" -o /tmp/godot.zip; then
+            echo "GitHub release download unavailable; using the official Godot mirror"
+            curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 "https://downloads.tuxfamily.org/godotengine/4.5.1/Godot_v4.5.1-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          fi
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install -m 0755 /tmp/godot/Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
-          if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz -o /tmp/templates.tpz; then
-            curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://downloads.tuxfamily.org/godotengine/4.5.1/Godot_v4.5.1-stable_export_templates.tpz -o /tmp/templates.tpz
+          TEMPLATE_URL="https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz"
+          if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 "$TEMPLATE_URL" -o /tmp/templates.tpz; then
+            echo "GitHub template download unavailable; using the official Godot mirror"
+            curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 "https://downloads.tuxfamily.org/godotengine/4.5.1/Godot_v4.5.1-stable_export_templates.tpz" -o /tmp/templates.tpz
           fi
           unzip -q /tmp/templates.tpz -d /tmp/templates
           cp -a /tmp/templates/templates/. "$HOME/.local/share/godot/export_templates/4.5.1.stable/"
