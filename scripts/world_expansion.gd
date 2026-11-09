@@ -1,5 +1,6 @@
 extends Node3D
 const POLICE = preload("res://scripts/police_officer.gd")
+const ASSETS = preload("res://scripts/asset_library.gd")
 ## Streamed regional world, transport terminals, shops and police dispatch.
 signal radio_message(message: String)
 signal region_changed(region_name: String)
@@ -146,9 +147,19 @@ func _make_chunk(region_id: int, cx: int, cz: int) -> Node3D:
 			var w: float = 34.0 if data.kind == "city" else 31.0
 			var d: float = 36.0
 			var color: Color = palette[seed%palette.size()]
-			_make_building(root,origin+Vector3(px,h*0.5-0.1,pz),Vector3(w,h,d),color,style,seed)
+			var building_pos: Vector3 = origin+Vector3(px,h*0.5-0.1,pz)
+			var building_size: Vector3 = Vector3(w,h,d)
+			var imported: Node3D = ASSETS.create_building(root,building_pos,building_size,seed)
+			if imported == null:
+				_make_building(root,building_pos,building_size,color,style,seed)
 			if seed%4 == 0:
 				_make_shop(root,origin+Vector3(px,0,pz),style,seed,"%d:%d:%d" % [region_id,cx,cz])
+	# Imported Kenney street props add a real silhouette and variation to each streamed block.
+	for lamp_z in [-82.0,82.0]:
+		ASSETS.create_prop(root,"light-square.glb",origin+Vector3(-17,0,lamp_z),1.0)
+		ASSETS.create_prop(root,"light-square.glb",origin+Vector3(17,0,lamp_z),1.0)
+	ASSETS.create_city_prop(root,"tree-large.glb",origin+Vector3(-34,0,-34),1.0)
+	ASSETS.create_city_prop(root,"tree-small.glb",origin+Vector3(34,0,34),1.0)
 	if cx == 1 and cz == 0:
 		_make_transport_hub(root,origin,style)
 	return root
