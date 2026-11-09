@@ -122,7 +122,8 @@ func _start_game() -> void:
 	world_system = WORLD.new()
 	add_child(world_system)
 	world_system.initialize(player,self)
-	player.crime_committed.connect(world_system.add_crime)
+	player.crime_committed.connect(_on_crime_committed)
+	world_system.region_changed.connect(_on_region_changed)
 	world_system.radio_message.connect(_on_radio_message)
 	world_system.wanted_changed.connect(_on_wanted_changed)
 	progress.value = 100
@@ -133,6 +134,12 @@ func _start_game() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_vehicle(delta)
+
+func _on_crime_committed() -> void:
+	if is_instance_valid(world_system): world_system.add_crime(1.0)
+
+func _on_region_changed(region_name: String) -> void:
+	if is_instance_valid(title_label): title_label.text = "GANGSTER: %s  •  CHAPTER 01" % region_name.to_upper()
 
 func _on_radio_message(message: String) -> void:
 	if is_instance_valid(world_system) and is_instance_valid(world_system.radio_label):
