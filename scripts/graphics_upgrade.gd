@@ -171,7 +171,7 @@ static func _add_street_details(world: Node3D) -> void:
 	# Street furniture creates readable scale at pedestrian height.
 	for side in [-1.0, 1.0]:
 		for z in [-35.0, -5.0, 25.0]:
-			var bin_x := side * 10.4
+			var bin_x: float = side * 10.4
 			_mesh_cylinder(world, "CityTrashCan", Vector3(bin_x, 0.62, z), 0.34, 1.15, Color(0.12, 0.16, 0.18))
 			_mesh_cylinder(world, "TrashCanRim", Vector3(bin_x, 1.19, z), 0.37, 0.08, Color(0.36, 0.4, 0.42))
 			_mesh_box(world, "TrashCanSlot", Vector3(bin_x, 0.9, z - 0.32), Vector3(0.25, 0.08, 0.025), Color(0.025, 0.03, 0.035))
