@@ -218,6 +218,12 @@ func _make_transport_hub(root: Node3D, origin: Vector3, style: int) -> void:
 	_add_box(root,"TaxiDepot",origin+Vector3(-62,2,-62),Vector3(30,4,18),_material(Color(0.16,0.24,0.19)),true)
 	_add_box(root,"PoliceStation",origin+Vector3(-62,3,62),Vector3(28,6,22),_material(Color(0.16,0.22,0.3)),true)
 	_add_box(root,"PoliceSign",origin+Vector3(-62,6.5,50.5),Vector3(12,1,0.3),_material(Color(0.08,0.26,0.62)),false)
+	_add_box(root,"FireStation",origin+Vector3(-62,3,-115),Vector3(28,6,22),_material(Color(0.62,0.12,0.08)),true)
+	_add_box(root,"FireStationDoor",origin+Vector3(-62,2,-103.5),Vector3(10,4,0.3),_material(Color(0.12,0.13,0.15)),false)
+	_add_box(root,"AirportPlaneFuselage",origin+Vector3(130,7,62),Vector3(5,4,28),_material(Color(0.84,0.86,0.88)),false)
+	_add_box(root,"AirportPlaneWing",origin+Vector3(130,6,62),Vector3(34,0.8,6),_material(Color(0.78,0.81,0.84)),false)
+	_add_box(root,"AirportPlaneTail",origin+Vector3(130,9,74),Vector3(12,0.7,5),_material(Color(0.14,0.25,0.44)),false)
+	_add_box(root,"AirportHangar",origin+Vector3(178,8,115),Vector3(42,16,36),_material(Color(0.3,0.34,0.38)),true)
 
 func _make_regional_landmark(root: Node3D, origin: Vector3, style: int) -> void:
 	match style:
