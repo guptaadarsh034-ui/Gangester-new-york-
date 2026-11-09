@@ -29,6 +29,8 @@ var dispatch_timer: float = 0.0
 var police_units: Array[CharacterBody3D] = []
 var taxi_active: bool = false
 var in_shop: bool = false
+var shop_entries: Array[Dictionary] = []
+var active_shop: Dictionary = {}
 var shop_return: Vector3
 var shop_return_region: int = 0
 var wanted_decay: float = 0.0
@@ -48,6 +50,7 @@ func _process(delta: float) -> void:
 	_update_streaming()
 	_update_wanted(delta)
 	_update_police(delta)
+	_update_shop_interaction()
 	if taxi_active and Input.is_action_just_pressed("interact"):
 		taxi_active = false
 
@@ -68,11 +71,18 @@ func _update_streaming() -> void:
 	for key in loaded_chunks.keys():
 		if not wanted.has(key): stale.append(key)
 	for key in stale:
+		var kept: Array[Dictionary] = []
+		for entry in shop_entries:
+			if str(entry.get("chunk_key","")) != str(key): kept.append(entry)
+		shop_entries = kept
 		var node: Node3D = loaded_chunks[key]
 		if is_instance_valid(node): node.queue_free()
 		loaded_chunks.erase(key)
 
 func _load_region(index: int, announce: bool) -> void:
+	if active_region != index: clear_wanted()
+	shop_entries.clear()
+	in_shop = false
 	for node in loaded_chunks.values():
 		if is_instance_valid(node): node.queue_free()
 	loaded_chunks.clear()
@@ -121,21 +131,21 @@ func _make_chunk(region_id: int, cx: int, cz: int) -> Node3D:
 	_add_box(root,"SidewalkE",origin+Vector3(0,-0.08,-13),Vector3(CHUNK_SIZE,0.3,8),sidewalk_mat,true)
 	_add_box(root,"SidewalkW",origin+Vector3(0,-0.08,13),Vector3(CHUNK_SIZE,0.3,8),sidewalk_mat,true)
 	var palette: Array[Color] = _palette(style)
-	var blocks: int = 3 if data.kind == "city" else 2
+	var blocks: int = 2
 	for bx in range(blocks):
 		for bz in range(blocks):
-			var px: float = -75.0 + float(bx)*75.0
-			var pz: float = -75.0 + float(bz)*75.0
+			var px: float = -58.0 + float(bx)*116.0
+			var pz: float = -58.0 + float(bz)*116.0
 			if absf(px) < 24.0 or absf(pz) < 24.0: continue
 			var seed: int = abs(cx*73+cz*37+region_id*113+bx*19+bz*11)
 			var h: float = (18.0 + float(seed%7)*5.0) if data.kind == "city" else (7.0+float(seed%4)*2.4)
-			var w: float = 24.0 if data.kind == "city" else 27.0
-			var d: float = 26.0
+			var w: float = 34.0 if data.kind == "city" else 31.0
+			var d: float = 36.0
 			var color: Color = palette[seed%palette.size()]
 			_make_building(root,origin+Vector3(px,h*0.5-0.1,pz),Vector3(w,h,d),color,style,seed)
 			if seed%4 == 0:
-				_make_shop(root,origin+Vector3(px,0,pz),style,seed)
-	if cx == 0 and cz == 0:
+				_make_shop(root,origin+Vector3(px,0,pz),style,seed,"%d:%d:%d" % [region_id,cx,cz])
+	if cx == 1 and cz == 0:
 		_make_transport_hub(root,origin,style)
 	return root
 
@@ -162,13 +172,42 @@ func _make_building(root: Node3D, pos: Vector3, size: Vector3, color: Color, sty
 	if style == 2 or style == 3:
 		_add_box(root,"StoneFacadeBand",pos+Vector3(0,0,size.z*0.5+0.12),Vector3(size.x,0.28,0.18),_material(color.lightened(0.22)),false)
 
-func _make_shop(root: Node3D, pos: Vector3, style: int, seed: int) -> void:
+func _make_shop(root: Node3D, pos: Vector3, style: int, seed: int, chunk_key: String) -> void:
 	var sign_colors: Array[Color] = [Color(0.76,0.2,0.12),Color(0.12,0.44,0.58),Color(0.72,0.55,0.18)]
 	var c: Color = sign_colors[seed%sign_colors.size()]
 	_add_box(root,"ShopAwning",pos+Vector3(0,3.0,-14.2),Vector3(10,0.7,1.1),_material(c),false)
 	_add_box(root,"ShopFrontGlass",pos+Vector3(0,1.5,-13.7),Vector3(8,2.8,0.12),_material(Color(0.09,0.2,0.27)),false)
 	_add_box(root,"ShopDoor",pos+Vector3(4.3,1.4,-13.6),Vector3(1.0,2.6,0.2),_material(Color(0.22,0.18,0.12)),false)
 	_add_box(root,"ShopNameplate",pos+Vector3(0,4.0,-14.1),Vector3(8.5,0.8,0.25),_material(Color(0.95,0.76,0.4)),false)
+	var interior: Vector3 = pos + Vector3(0,-150,0)
+	_add_box(root,"ShopInteriorFloor",interior+Vector3(0,-0.25,0),Vector3(16,0.5,14),_material(Color(0.24,0.22,0.18)),true)
+	_add_box(root,"ShopInteriorBackWall",interior+Vector3(0,2.2,6.8),Vector3(16,4.4,0.4),_material(Color(0.35,0.31,0.25)),true)
+	_add_box(root,"ShopInteriorLeftWall",interior+Vector3(-7.8,2.2,0),Vector3(0.4,4.4,14),_material(Color(0.32,0.29,0.24)),true)
+	_add_box(root,"ShopInteriorRightWall",interior+Vector3(7.8,2.2,0),Vector3(0.4,4.4,14),_material(Color(0.32,0.29,0.24)),true)
+	_add_box(root,"ShopCounter",interior+Vector3(0,0.75,-3.4),Vector3(10,1.5,1.2),_material(Color(0.18,0.12,0.08)),true)
+	for shelf_x in [-5.5,5.5]:
+		_add_box(root,"ShopShelf",interior+Vector3(shelf_x,1.5,2.0),Vector3(1.0,3.0,5.0),_material(Color(0.18,0.15,0.12)),true)
+	shop_entries.append({"entrance":pos+Vector3(0,0.1,-11.0),"interior":interior,"chunk_key":chunk_key})
+
+func _update_shop_interaction() -> void:
+	if not Input.is_action_just_pressed("interact") or not is_instance_valid(player): return
+	if in_shop:
+		player.global_position = shop_return
+		player.velocity = Vector3.ZERO
+		in_shop = false
+		active_shop = {}
+		radio_message.emit("STORE CLERK: Thanks for stopping by.")
+		return
+	for entry in shop_entries:
+		var entrance: Vector3 = entry.entrance
+		if player.global_position.distance_to(entrance) < 4.0:
+			shop_return = player.global_position
+			active_shop = entry
+			player.global_position = entry.interior + Vector3(0,1.2,4.5)
+			player.velocity = Vector3.ZERO
+			in_shop = true
+			radio_message.emit("STORE PA: Welcome inside. Tap ACTION at the door to leave.")
+			return
 
 func _make_transport_hub(root: Node3D, origin: Vector3, style: int) -> void:
 	_add_box(root,"AirportTerminal",origin+Vector3(62,5,62),Vector3(55,10,34),_material(Color(0.22,0.29,0.35)),true)
@@ -360,5 +399,21 @@ func _close_travel() -> void:
 	if is_instance_valid(travel_panel): travel_panel.visible = false
 
 func _taxi_local() -> void:
+	if taxi_active: return
+	taxi_active = true
+	var cab := CharacterBody3D.new()
+	cab.name = "CityTaxi"
+	cab.position = player.global_position + Vector3(4,0,4)
+	var body := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(2.1,0.8,4.0)
+	mesh.material = _material(Color(0.88,0.68,0.12))
+	body.mesh = mesh
+	body.position.y = 0.75
+	cab.add_child(body)
+	get_parent().add_child(cab)
+	radio_message.emit("TAXI DISPATCH: Your cab is pulling up. Please wait.")
+	await get_tree().create_timer(1.5).timeout
+	if is_instance_valid(cab): cab.queue_free()
 	travel_to(active_region,false)
-	radio_message.emit("TAXI DISPATCH: Your cab is waiting at the curb.")
+	taxi_active = false
