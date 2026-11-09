@@ -1,158 +1,192 @@
 extends CanvasLayer
-# Touch-first mobile controls: analog movement, camera drag and hold buttons.
+## Touch-first controls. Raw screen events are used so independent fingers can
+## move, look and press action buttons simultaneously on Android.
 
-class Joystick extends Control:
-	signal changed(value: Vector2)
-	var value := Vector2.ZERO
-	var dragging := false
-	var finger := -1
-	var radius := 78.0
+signal look_dragged(delta: Vector2)
 
-	func _ready() -> void:
-		custom_minimum_size = Vector2(200, 200)
-		size = Vector2(200, 200)
-		mouse_filter = Control.MOUSE_FILTER_STOP
-		queue_redraw()
+const STICK_RADIUS := 92.0
+const STICK_DEADZONE := 0.12
+const LOOK_SENSITIVITY := 1.0
 
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventScreenTouch:
-			if event.pressed and Rect2(Vector2.ZERO, size).has_point(event.position):
-				dragging = true
-				finger = event.index
-				_update_value(event.position)
-				accept_event()
-			elif not event.pressed and dragging and event.index == finger:
-				_release_stick()
-				accept_event()
-		elif event is InputEventScreenDrag and dragging and event.index == finger:
-			_update_value(event.position)
-			accept_event()
-		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				dragging = true
-				_update_value(event.position)
-			else:
-				_release_stick()
-			accept_event()
-		elif event is InputEventMouseMotion and dragging:
-			_update_value(event.position)
-			accept_event()
-
-	func _update_value(point: Vector2) -> void:
-		var offset := point - size * 0.5
-		value = offset.limit_length(radius) / radius
-		changed.emit(value)
-		queue_redraw()
-
-	func _release_stick() -> void:
-		dragging = false
-		finger = -1
-		value = Vector2.ZERO
-		changed.emit(value)
-		queue_redraw()
-
-	func _draw() -> void:
-		var center := size * 0.5
-		draw_circle(center, radius + 8.0, Color(0.02, 0.035, 0.055, 0.42))
-		draw_arc(center, radius, 0.0, TAU, 64, Color(0.9, 0.72, 0.42, 0.8), 3.0)
-		draw_circle(center + value * radius, 34.0, Color(0.12, 0.19, 0.27, 0.9))
-		draw_arc(center + value * radius, 34.0, 0.0, TAU, 48, Color(1.0, 0.78, 0.43, 0.95), 3.0)
-
-class LookZone extends Control:
-	signal dragged(delta: Vector2)
-	var finger := -1
-	var mouse_down := false
-
-	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_STOP
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventScreenTouch:
-			if event.pressed and finger == -1:
-				finger = event.index
-			elif not event.pressed and event.index == finger:
-				finger = -1
-			accept_event()
-		elif event is InputEventScreenDrag and event.index == finger:
-			dragged.emit(event.relative)
-			accept_event()
-		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			mouse_down = event.pressed
-			accept_event()
-		elif event is InputEventMouseMotion and mouse_down:
-			dragged.emit(event.relative)
-			accept_event()
-
-var joystick: Joystick
-var look_zone: LookZone
+var ui: Control
+var stick_finger := -1
+var look_finger := -1
+var button_fingers: Dictionary = {}
+var action_fingers: Dictionary = {}
+var stick_value := Vector2.ZERO
+var stick_center := Vector2.ZERO
+var button_rects: Dictionary = {}
+var look_last := Vector2.ZERO
+var mouse_stick := false
+var mouse_look := false
+var mouse_buttons: Array[String] = []
 
 func _ready() -> void:
-	var ui := Control.new()
+	layer = 15
+	ui = Control.new()
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
+	_layout()
+	get_viewport().size_changed.connect(_layout)
 
-	look_zone = LookZone.new()
-	look_zone.anchor_left = 0.40
-	look_zone.anchor_top = 0.12
-	look_zone.anchor_right = 0.96
-	look_zone.anchor_bottom = 0.94
-	ui.add_child(look_zone)
+func _layout() -> void:
+	if not is_instance_valid(ui): return
+	var s := get_viewport().get_visible_rect().size
+	stick_center = Vector2(150.0, s.y - 150.0)
+	button_rects = {
+		"fire": Rect2(Vector2(s.x-150.0,s.y-220.0),Vector2(118,100)),
+		"aim": Rect2(Vector2(s.x-280.0,s.y-150.0),Vector2(100,82)),
+		"interact": Rect2(Vector2(s.x-285.0,s.y-255.0),Vector2(108,82)),
+		"jump": Rect2(Vector2(s.x-145.0,s.y-345.0),Vector2(108,82)),
+		"sprint": Rect2(Vector2(s.x-285.0,s.y-365.0),Vector2(108,82))
+	}
+	ui.queue_redraw()
 
-	joystick = Joystick.new()
-	joystick.position = Vector2(26, -218)
-	joystick.anchor_top = 1.0
-	joystick.anchor_bottom = 1.0
-	ui.add_child(joystick)
-	joystick.changed.connect(_move)
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed: _touch_begin(event.index,event.position)
+		else: _touch_end(event.index)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventScreenDrag:
+		_touch_drag(event.index,event.position,event.relative)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed: _touch_begin(-2,event.position)
+		else: _touch_end(-2)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion:
+		if mouse_stick: _update_stick(event.position)
+		elif mouse_look: _update_look(-2,event.position,event.relative)
+		get_viewport().set_input_as_handled()
 
-	_add_button(ui, "FIRE", Vector2(-126, -126), Vector2(104, 82), "fire", true)
-	_add_button(ui, "AIM", Vector2(-246, -116), Vector2(98, 68), "aim", true)
-	_add_button(ui, "ACTION", Vector2(-246, -204), Vector2(98, 68), "interact", false)
-	_add_button(ui, "JUMP", Vector2(-126, -224), Vector2(104, 78), "jump", false)
-	_add_button(ui, "SPRINT", Vector2(-126, -318), Vector2(104, 70), "sprint", true)
+func _touch_begin(finger: int, point: Vector2) -> void:
+	if finger == -2:
+		if _inside_stick(point):
+			mouse_stick = true
+			stick_finger = finger
+			_update_stick(point)
+			return
+		var action := _button_at(point)
+		if action != "":
+			mouse_buttons.append(action)
+			_press_action(action,finger)
+			return
+		if point.x > get_viewport().get_visible_rect().size.x*0.42:
+			mouse_look = true
+			look_finger = finger
+			look_last = point
+		return
+	if stick_finger == -1 and _inside_stick(point):
+		stick_finger = finger
+		_update_stick(point)
+		return
+	var action := _button_at(point)
+	if action != "":
+		_press_action(action,finger)
+		return
+	var width := get_viewport().get_visible_rect().size.x
+	if look_finger == -1 and point.x > width*0.42:
+		look_finger = finger
+		look_last = point
 
-func _move(value: Vector2) -> void:
-	_set_action("move_left", maxf(0.0, -value.x))
-	_set_action("move_right", maxf(0.0, value.x))
-	_set_action("move_forward", maxf(0.0, -value.y))
-	_set_action("move_back", maxf(0.0, value.y))
+func _touch_drag(finger: int, point: Vector2, relative: Vector2) -> void:
+	if finger == stick_finger:
+		_update_stick(point)
+	elif finger == look_finger:
+		_update_look(finger,point,relative)
 
-func _set_action(action: String, strength: float) -> void:
-	if strength > 0.02:
-		Input.action_press(action, strength)
+func _touch_end(finger: int) -> void:
+	if finger == stick_finger:
+		stick_finger = -1
+		mouse_stick = false
+		stick_value = Vector2.ZERO
+		_apply_move()
+		ui.queue_redraw()
+	if finger == look_finger:
+		look_finger = -1
+		mouse_look = false
+	for action in button_fingers.keys():
+		var fingers: Dictionary = button_fingers[action]
+		if fingers.has(finger):
+			fingers.erase(finger)
+			if fingers.is_empty():
+				button_fingers.erase(action)
+				_release_action(action)
+
+func _inside_stick(point: Vector2) -> bool:
+	return point.distance_to(stick_center) < STICK_RADIUS*2.0
+
+func _update_stick(point: Vector2) -> void:
+	var offset := point-stick_center
+	stick_value = offset.limit_length(STICK_RADIUS)/STICK_RADIUS
+	if stick_value.length() < STICK_DEADZONE: stick_value = Vector2.ZERO
+	_apply_move()
+	ui.queue_redraw()
+
+func _apply_move() -> void:
+	_set_action("move_left",maxf(0.0,-stick_value.x))
+	_set_action("move_right",maxf(0.0,stick_value.x))
+	_set_action("move_forward",maxf(0.0,-stick_value.y))
+	_set_action("move_back",maxf(0.0,stick_value.y))
+
+func _update_look(finger: int, point: Vector2, relative: Vector2) -> void:
+	var delta := relative
+	if delta.length() < 0.001:
+		delta = point-look_last
+	look_last = point
+	look_dragged.emit(delta*LOOK_SENSITIVITY)
+
+func _button_at(point: Vector2) -> String:
+	for action in button_rects:
+		if (button_rects[action] as Rect2).has_point(point): return action
+	return ""
+
+func _press_action(action: String, finger: int) -> void:
+	if not button_fingers.has(action): button_fingers[action] = {}
+	var fingers: Dictionary = button_fingers[action]
+	fingers[finger] = true
+	if action == "interact" or action == "jump":
+		if fingers.size() == 1: _tap_action(action)
 	else:
+		_set_action(action,1.0)
+
+func _tap_action(action: String) -> void:
+	Input.action_press(action)
+	await get_tree().create_timer(0.14).timeout
+	if not button_fingers.has(action) or (button_fingers[action] as Dictionary).is_empty():
 		Input.action_release(action)
 
-func _add_button(parent: Control, caption: String, offset: Vector2, dimensions: Vector2, action: String, hold: bool) -> void:
-	var button := Button.new()
-	button.text = caption
-	button.position = offset
-	button.size = dimensions
-	button.anchor_left = 1.0
-	button.anchor_right = 1.0
-	button.anchor_top = 1.0
-	button.anchor_bottom = 1.0
-	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_font_size_override("font_size", 17)
-	button.add_theme_color_override("font_color", Color.WHITE)
-	button.add_theme_stylebox_override("normal", _style(Color(0.035, 0.065, 0.10, 0.86)))
-	button.add_theme_stylebox_override("pressed", _style(Color(0.62, 0.17, 0.075, 0.96)))
-	parent.add_child(button)
-	if hold:
-		button.button_down.connect(func(): Input.action_press(action))
-		button.button_up.connect(func(): Input.action_release(action))
+func _release_action(action: String) -> void:
+	if action == "interact" or action == "jump":
+		Input.action_release(action)
 	else:
-		button.pressed.connect(func(): _tap(action))
+		_set_action(action,0.0)
 
-func _tap(action: String) -> void:
-	Input.action_press(action)
-	await get_tree().create_timer(0.12).timeout
-	Input.action_release(action)
+func _set_action(action: String, strength: float) -> void:
+	if strength > 0.02: Input.action_press(action,strength)
+	else: Input.action_release(action)
 
-func _style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = Color(0.98, 0.70, 0.34, 0.95)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(18)
-	return style
+func _draw_controls() -> void:
+	pass
+
+func _process(_delta: float) -> void:
+	if is_instance_valid(ui): ui.queue_redraw()
+
+func _draw() -> void:
+	var s := get_viewport().get_visible_rect().size
+	var center := stick_center
+	draw_circle(center,STICK_RADIUS+12.0,Color(0.015,0.025,0.04,0.52))
+	draw_arc(center,STICK_RADIUS,0.0,TAU,64,Color(0.95,0.72,0.38,0.88),3.0)
+	draw_circle(center+stick_value*STICK_RADIUS,35.0,Color(0.12,0.2,0.29,0.92))
+	draw_arc(center+stick_value*STICK_RADIUS,35.0,0.0,TAU,48,Color(1.0,0.8,0.48),3.0)
+	for action in button_rects:
+		var rect: Rect2 = button_rects[action]
+		var active := button_fingers.has(action) and not (button_fingers[action] as Dictionary).is_empty()
+		var fill := Color(0.58,0.16,0.07,0.92) if active else Color(0.025,0.06,0.10,0.78)
+		draw_rect(rect,fill,true)
+		draw_rect(rect,Color(0.96,0.7,0.35,0.95),false,3.0)
+		var label := action.to_upper()
+		var font := ThemeDB.fallback_font
+		var font_size := 22
+		draw_string(font,rect.position+Vector2((rect.size.x-font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x)*0.5,rect.size.y*0.58),label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Color.WHITE)
