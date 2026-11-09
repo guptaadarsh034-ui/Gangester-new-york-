@@ -17,14 +17,12 @@ var ui: Control
 var stick_finger := -1
 var look_finger := -1
 var button_fingers: Dictionary = {}
-var action_fingers: Dictionary = {}
 var stick_value := Vector2.ZERO
 var stick_center := Vector2.ZERO
 var button_rects: Dictionary = {}
 var look_last := Vector2.ZERO
 var mouse_stick := false
 var mouse_look := false
-var mouse_buttons: Array[String] = []
 
 func _ready() -> void:
 	layer = 15
@@ -75,11 +73,10 @@ func _touch_begin(finger: int, point: Vector2) -> bool:
 			return true
 		var action := _button_at(point)
 		if action != "":
-			mouse_buttons.append(action)
 			_press_action(action,finger)
 			return true
-		var s := get_viewport().get_visible_rect().size
-		if point.x > s.x*0.42 and point.y > s.y*0.16 and point.y < s.y*0.76:
+		var mouse_view_size := get_viewport().get_visible_rect().size
+		if point.x > mouse_view_size.x*0.42 and point.y > mouse_view_size.y*0.16 and point.y < mouse_view_size.y*0.76:
 			mouse_look = true
 			look_finger = finger
 			look_last = point
@@ -93,8 +90,8 @@ func _touch_begin(finger: int, point: Vector2) -> bool:
 	if action != "":
 		_press_action(action,finger)
 		return true
-	var s := get_viewport().get_visible_rect().size
-	if look_finger == -1 and point.x > s.x*0.42 and point.y > s.y*0.16 and point.y < s.y*0.76:
+	var touch_view_size := get_viewport().get_visible_rect().size
+	if look_finger == -1 and point.x > touch_view_size.x*0.42 and point.y > touch_view_size.y*0.16 and point.y < touch_view_size.y*0.76:
 		look_finger = finger
 		look_last = point
 		return true
@@ -107,7 +104,10 @@ func _touch_drag(finger: int, point: Vector2, relative: Vector2) -> bool:
 	elif finger == look_finger:
 		_update_look(finger,point,relative)
 		return true
-	return button_fingers.values().any(func(v): return (v as Dictionary).has(finger))
+	for action in button_fingers:
+		var active_fingers: Dictionary = button_fingers[action]
+		if active_fingers.has(finger): return true
+	return false
 
 func _touch_end(finger: int) -> bool:
 	var captured := finger == stick_finger or finger == look_finger
