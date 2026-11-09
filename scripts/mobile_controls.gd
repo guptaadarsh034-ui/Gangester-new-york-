@@ -9,7 +9,7 @@ const STICK_DEADZONE := 0.12
 const LOOK_SENSITIVITY := 1.0
 
 class TouchOverlay extends Control:
-	var controller: Node
+	var controller: Variant
 	func _draw() -> void:
 		if is_instance_valid(controller): controller._draw_overlay(self)
 
@@ -49,13 +49,13 @@ func _layout() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
-		var captured := _touch_begin(event.index,event.position) if event.pressed else _touch_end(event.index)
-		if captured: get_viewport().set_input_as_handled()
+		var touch_captured := _touch_begin(event.index,event.position) if event.pressed else _touch_end(event.index)
+		if touch_captured: get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		if _touch_drag(event.index,event.position,event.relative): get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		var captured := _touch_begin(-2,event.position) if event.pressed else _touch_end(-2)
-		if captured: get_viewport().set_input_as_handled()
+		var mouse_captured := _touch_begin(-2,event.position) if event.pressed else _touch_end(-2)
+		if mouse_captured: get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
 		if mouse_stick:
 			_update_stick(event.position)
@@ -71,9 +71,9 @@ func _touch_begin(finger: int, point: Vector2) -> bool:
 			stick_finger = finger
 			_update_stick(point)
 			return true
-		var action := _button_at(point)
-		if action != "":
-			_press_action(action,finger)
+		var mouse_action := _button_at(point)
+		if mouse_action != "":
+			_press_action(mouse_action,finger)
 			return true
 		var mouse_view_size := get_viewport().get_visible_rect().size
 		if point.x > mouse_view_size.x*0.42 and point.y > mouse_view_size.y*0.16 and point.y < mouse_view_size.y*0.76:
@@ -86,9 +86,9 @@ func _touch_begin(finger: int, point: Vector2) -> bool:
 		stick_finger = finger
 		_update_stick(point)
 		return true
-	var action := _button_at(point)
-	if action != "":
-		_press_action(action,finger)
+	var touch_action := _button_at(point)
+	if touch_action != "":
+		_press_action(touch_action,finger)
 		return true
 	var touch_view_size := get_viewport().get_visible_rect().size
 	if look_finger == -1 and point.x > touch_view_size.x*0.42 and point.y > touch_view_size.y*0.16 and point.y < touch_view_size.y*0.76:
