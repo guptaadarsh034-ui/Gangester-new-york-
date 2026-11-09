@@ -53,7 +53,12 @@ static func create_building(parent: Node3D, position: Vector3, target_size: Vect
 	return instance
 
 static func create_prop(parent: Node3D, filename: String, position: Vector3, scale_factor: float = 1.0) -> Node3D:
-	var path: String = ROAD_ROOT + filename
+	return create_asset(parent,ROAD_ROOT + filename,position,scale_factor)
+
+static func create_city_prop(parent: Node3D, filename: String, position: Vector3, scale_factor: float = 1.0) -> Node3D:
+	return create_asset(parent,BUILDING_ROOT + filename,position,scale_factor)
+
+static func create_asset(parent: Node3D, path: String, position: Vector3, scale_factor: float = 1.0) -> Node3D:
 	if not ResourceLoader.exists(path):
 		return null
 	var packed := load(path) as PackedScene
