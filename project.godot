@@ -2,9 +2,9 @@ config_version=5
 
 [application]
 config/name="GANGSTER: NEW YORK"
-config/version="0.5.0"
+config/version="0.6.0"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.5", "GL Compatibility")
+config/features=PackedStringArray("4.5", "Mobile")
 config/description="Offline open-world action game with streamed regions, city travel, taxis, shops, police dispatch and mobile controls."
 
 [display]
@@ -14,7 +14,9 @@ window/handheld/orientation=0
 window/stretch/mode="canvas_items"
 
 [rendering]
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.035, 0.055, 0.08, 1)
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size=2048
