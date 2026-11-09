@@ -177,14 +177,14 @@ func _draw_overlay(canvas: Control) -> void:
 	var center := stick_center
 	canvas.draw_circle(center,STICK_RADIUS+12.0,Color(0.015,0.025,0.04,0.52))
 	canvas.draw_arc(center,STICK_RADIUS,0.0,TAU,64,Color(0.95,0.72,0.38,0.88),3.0)
-	draw_circle(center+stick_value*STICK_RADIUS,35.0,Color(0.12,0.2,0.29,0.92))
-	draw_arc(center+stick_value*STICK_RADIUS,35.0,0.0,TAU,48,Color(1.0,0.8,0.48),3.0)
+	canvas.draw_circle(center+stick_value*STICK_RADIUS,35.0,Color(0.12,0.2,0.29,0.92))
+	canvas.draw_arc(center+stick_value*STICK_RADIUS,35.0,0.0,TAU,48,Color(1.0,0.8,0.48),3.0)
 	for action in button_rects:
 		var rect: Rect2 = button_rects[action]
 		var active := button_fingers.has(action) and not (button_fingers[action] as Dictionary).is_empty()
 		var fill := Color(0.58,0.16,0.07,0.92) if active else Color(0.025,0.06,0.10,0.78)
 		canvas.draw_rect(rect,fill,true)
-		draw_rect(rect,Color(0.96,0.7,0.35,0.95),false,3.0)
+		canvas.draw_rect(rect,Color(0.96,0.7,0.35,0.95),false,3.0)
 		var label := action.to_upper()
 		var font := ThemeDB.fallback_font
 		var font_size := 22
