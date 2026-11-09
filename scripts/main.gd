@@ -3,6 +3,7 @@ const PLAYER = preload("res://scripts/player.gd")
 const ENEMY = preload("res://scripts/enemy.gd")
 const GRAPHICS = preload("res://scripts/graphics_upgrade.gd")
 const MOBILE = preload("res://scripts/mobile_controls.gd")
+const WORLD = preload("res://scripts/world_expansion.gd")
 var player: CharacterBody3D
 var guards: Array[Node3D] = []
 var parcel: Node3D
@@ -20,6 +21,7 @@ var vehicle_hint: Label
 var menu_layer: CanvasLayer
 var loading_layer: CanvasLayer
 var mobile_controls: CanvasLayer
+var world_system: Node3D
 
 func _ready() -> void:
 	_input_setup()
@@ -117,6 +119,12 @@ func _start_game() -> void:
 	mobile_controls = MOBILE.new()
 	add_child(mobile_controls)
 	mobile_controls.look_zone.dragged.connect(player.apply_look)
+	world_system = WORLD.new()
+	add_child(world_system)
+	world_system.initialize(player,self)
+	player.crime_committed.connect(world_system.add_crime)
+	world_system.radio_message.connect(_on_radio_message)
+	world_system.wanted_changed.connect(_on_wanted_changed)
 	progress.value = 100
 	message.text = "READY"
 	await get_tree().create_timer(0.45).timeout
@@ -125,6 +133,15 @@ func _start_game() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_vehicle(delta)
+
+func _on_radio_message(message: String) -> void:
+	if is_instance_valid(world_system) and is_instance_valid(world_system.radio_label):
+		world_system.radio_label.text = message
+
+func _on_wanted_changed(level: int) -> void:
+	if is_instance_valid(world_system) and is_instance_valid(world_system.status_label):
+		var stars := "★".repeat(level) + "☆".repeat(5-level)
+		world_system.status_label.text = "%s  •  WANTED: %s" % [world_system.REGIONS[world_system.active_region].name.to_upper(),stars]
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(player): return
