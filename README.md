@@ -1,37 +1,33 @@
-# GANGSTER: NEW YORK — Godot Edition
+# GANGSTER: NEW YORK — Graphics Rebuild 0.6.0
 
-An offline-first 3D Android open-world action-game prototype built with Godot 4.5.1.
+Offline-first Godot 4.5.1 Android open-world prototype.
 
-## Current development milestone: 0.5.0 (Android version code 5)
+## Graphics rebuild
 
-The world expansion adds seven streamed destinations:
-- Major cities: New York City, San Francisco, London and Edinburgh
-- Smaller regions: Kent, Gloucester and Sussex
+This milestone changes the rendering baseline from GL Compatibility to Godot's Mobile renderer and enables 2× 3D MSAA with a 2048 directional shadow map. The Android CI job fetches and imports CC0 Kenney City Kit Suburban and City Kit Roads GLB assets before running Godot's import pass.
 
-The regional world manager streams a 3×3 area of city blocks around the player and unloads distant chunks. Regions are reached through the world map's airport flight service or long-distance taxi dispatch. Each region has a distinct procedural building palette and landmark blockout. New York's original story mission remains the starting area.
+The streamed world now attempts to instantiate imported building models and street-light props, with a procedural fallback if an asset is unavailable. Buildings receive simple static collision volumes. Asset downloads are pinned to a source repository commit for reproducibility.
 
-## Systems in this milestone
-- Touch-first mobile controls: analog movement joystick, camera drag, fire, aim, jump, sprint and action
-- Main menu and staged loading screen
-- Procedural city blocks, streets, storefronts, airport terminals, taxi depots and police stations
-- Enterable shop interiors with a counter and shelves (tap ACTION at a shop entrance to enter and ACTION again to leave)
-- Taxi pickup and local district transfer
-- Airport/flight travel between all seven regions
-- Wanted level with five levels, police radio callouts, responding patrols, pursuit and damageable officers
-- Original Mission 01: reach the warehouse, defeat guards, collect the package and escape
-- Drivable starter car and smartphone/GPS panel
-- Designed for offline play
+## Asset sources and licences
 
-## Controls
-Desktop: WASD/arrow keys to move, F to fire, Q to aim, Shift to sprint, Space to jump, E to interact.
-Android: left analog joystick to move, drag the right side to rotate the camera, and use FIRE, AIM, ACTION, JUMP and SPRINT.
+See [ASSET_SOURCES.md](ASSET_SOURCES.md). Kenney City Kit Suburban and City Kit Roads are CC0 1.0 assets. The CI workflow fetches the selected source directories from the public asset repository before import/export; the binary source assets are therefore packaged into the APK even though they are not duplicated in this repository.
 
-## Technical scope and honest limitations
-This is still a procedural prototype, not a finished GTA-scale game. The cities are stylised blockout districts, not full real-world street-accurate recreations. Travel currently uses airport/taxi fast-travel transitions; there are no continuous highways between all regions yet. Shop interiors are small generated rooms. Police pursuit is a basic prototype and still needs vehicle patrol AI, dispatch escalation, road navigation, traffic, pedestrians, emergency vehicles, economy, real shop inventories, audio and save/load. Production-grade art assets, character rigs, aircraft, cars and building interiors still need to be authored/imported and tested on Android devices.
+## Existing gameplay systems
 
-The renderer uses Godot's mobile-compatible GL Compatibility renderer. It is tuned for mobile feasibility, not a claim of Payback 2 or GTA visual parity.
+- New York City, San Francisco, London, Edinburgh, Kent, Gloucester and Sussex region destinations
+- Streamed regional chunks, airports, taxi travel and generated shop interiors
+- Wanted levels, police dispatch radio messages and basic pursuing officers
+- Original New York Mission 01
+- Mobile joystick, camera drag, aim, fire, jump, sprint and action controls
+
+## Honest limitations
+
+This is a visual foundation milestone, not a finished GTA/Payback 2 equivalent. The imported Kenney city assets are optimized stylized models, not photoreal scans. The cities remain compact procedural regions with fast-travel connections, not one continuous real-world-scale map. This branch still needs device testing, better character and vehicle models, PBR surface materials, traffic/pedestrian systems, richer interiors, animation, audio, mission content and extensive profiling.
+
+The Mobile renderer may require Vulkan-capable Android hardware. Device compatibility and frame rate must be checked on target phones before merging this branch.
 
 ## Build
-Open project.godot in Godot 4.5.1 or later. Android export requires matching Godot export templates and Android SDK. GitHub Actions exports build/GangsterNewYork.apk and uploads it as a workflow artifact.
 
-Android package: com.nexusdev.gny
+GitHub Actions downloads the CC0 assets, imports the Godot project, validates scripts, exports an ARM64 debug APK and uploads it as a workflow artifact.
+
+Android package: `com.nexusdev.gny`
