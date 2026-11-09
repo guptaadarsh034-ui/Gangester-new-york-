@@ -1,4 +1,5 @@
 extends CharacterBody3D
+signal crime_committed
 
 @export var move_speed: float = 6.2
 @export var sprint_multiplier: float = 1.55
@@ -81,6 +82,7 @@ func shoot() -> void:
 	if cooldown > 0.0:
 		return
 	cooldown = 0.28
+	crime_committed.emit()
 	var origin := camera.global_position
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + -camera.global_transform.basis.z * 70.0)
 	query.exclude = [get_rid()]
