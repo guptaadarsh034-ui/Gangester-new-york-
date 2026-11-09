@@ -8,6 +8,11 @@ const STICK_RADIUS := 92.0
 const STICK_DEADZONE := 0.12
 const LOOK_SENSITIVITY := 1.0
 
+class TouchOverlay extends Control:
+	var controller: Node
+	func _draw() -> void:
+		if is_instance_valid(controller): controller._draw_overlay(self)
+
 var ui: Control
 var stick_finger := -1
 var look_finger := -1
@@ -23,7 +28,8 @@ var mouse_buttons: Array[String] = []
 
 func _ready() -> void:
 	layer = 15
-	ui = Control.new()
+	ui = TouchOverlay.new()
+	(ui as TouchOverlay).controller = self
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
@@ -167,26 +173,19 @@ func _set_action(action: String, strength: float) -> void:
 	if strength > 0.02: Input.action_press(action,strength)
 	else: Input.action_release(action)
 
-func _draw_controls() -> void:
-	pass
-
-func _process(_delta: float) -> void:
-	if is_instance_valid(ui): ui.queue_redraw()
-
-func _draw() -> void:
-	var s := get_viewport().get_visible_rect().size
+func _draw_overlay(canvas: Control) -> void:
 	var center := stick_center
-	draw_circle(center,STICK_RADIUS+12.0,Color(0.015,0.025,0.04,0.52))
-	draw_arc(center,STICK_RADIUS,0.0,TAU,64,Color(0.95,0.72,0.38,0.88),3.0)
+	canvas.draw_circle(center,STICK_RADIUS+12.0,Color(0.015,0.025,0.04,0.52))
+	canvas.draw_arc(center,STICK_RADIUS,0.0,TAU,64,Color(0.95,0.72,0.38,0.88),3.0)
 	draw_circle(center+stick_value*STICK_RADIUS,35.0,Color(0.12,0.2,0.29,0.92))
 	draw_arc(center+stick_value*STICK_RADIUS,35.0,0.0,TAU,48,Color(1.0,0.8,0.48),3.0)
 	for action in button_rects:
 		var rect: Rect2 = button_rects[action]
 		var active := button_fingers.has(action) and not (button_fingers[action] as Dictionary).is_empty()
 		var fill := Color(0.58,0.16,0.07,0.92) if active else Color(0.025,0.06,0.10,0.78)
-		draw_rect(rect,fill,true)
+		canvas.draw_rect(rect,fill,true)
 		draw_rect(rect,Color(0.96,0.7,0.35,0.95),false,3.0)
 		var label := action.to_upper()
 		var font := ThemeDB.fallback_font
 		var font_size := 22
-		draw_string(font,rect.position+Vector2((rect.size.x-font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x)*0.5,rect.size.y*0.58),label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Color.WHITE)
+		canvas.draw_string(font,rect.position+Vector2((rect.size.x-font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x)*0.5,rect.size.y*0.58),label,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Color.WHITE)
