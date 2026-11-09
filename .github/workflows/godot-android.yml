@@ -1,7 +1,7 @@
 name: Godot Android APK
 on:
   push:
-    branches: [godot-migration, main, graphics-overhaul-0.3.0, mobile-gameplay-overhaul-0.4.0, world-expansion-0.5.0, graphics-rebuild-0.6.0, gameplay-rebuild-0.7.0]
+    branches: [godot-migration, main, graphics-overhaul-0.3.0, mobile-gameplay-overhaul-0.4.0, world-expansion-0.5.0, graphics-rebuild-0.6.0, gameplay-rebuild-0.7.0, character-upgrade-0.8.0]
   workflow_dispatch:
 permissions:
   contents: read

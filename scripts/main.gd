@@ -11,6 +11,7 @@ var stage := 0
 var title_label: Label
 var objective_label: Label
 var health_label: Label
+var ammo_label: Label
 var phone_panel: PanelContainer
 var phone_gps_label: Label
 var phone_status_label: Label
@@ -153,6 +154,7 @@ func _on_wanted_changed(level: int) -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(player): return
 	health_label.text = "♥  %d" % player.health
+	if is_instance_valid(ammo_label): ammo_label.text = "AMMO  %02d / %02d" % [player.ammo, player.reserve_ammo]
 	if is_instance_valid(phone_gps_label): phone_gps_label.text = objective_label.text
 	if player.health <= 0 and stage < 3:
 		stage = 4
@@ -172,7 +174,7 @@ func _process(delta: float) -> void:
 		_refresh()
 
 func _input_setup() -> void:
-	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_F],"aim":[KEY_Q]}
+	var map := {"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_forward":[KEY_W,KEY_UP],"move_back":[KEY_S,KEY_DOWN],"interact":[KEY_E],"jump":[KEY_SPACE],"sprint":[KEY_SHIFT],"fire":[KEY_F],"aim":[KEY_Q],"reload":[KEY_R]}
 	for action in map:
 		if not InputMap.has_action(action): InputMap.add_action(action)
 		for code in map[action]:
@@ -360,64 +362,188 @@ func _make_player() -> void:
 	add_child(player)
 
 func _character_visual(body: CharacterBody3D,color: Color,radius: float) -> void:
+	# Layered low-poly streetwear character: separate pivots allow independent gait and recoil.
+	var skin := _mat(Color(0.67,0.43,0.29),0.72)
+	var cloth := _mat(color,0.78)
+	var dark_cloth := _mat(color.darkened(0.38),0.82)
+	var pants_mat := _mat(Color(0.075,0.09,0.12),0.88)
+	var boot_mat := _mat(Color(0.035,0.04,0.05),0.65,0.08)
+	var metal_mat := _mat(Color(0.12,0.14,0.17),0.32,0.72)
 	var torso := MeshInstance3D.new()
 	var torso_mesh := CapsuleMesh.new()
-	torso_mesh.radius = radius*0.9
+	torso_mesh.radius = radius * 0.92
 	torso_mesh.height = 1.05
-	torso_mesh.material = _mat(color)
+	torso_mesh.material = cloth
 	torso.mesh = torso_mesh
 	torso.position = Vector3(0,1.12,0)
 	body.add_child(torso)
+	var chest := MeshInstance3D.new()
+	var chest_mesh := BoxMesh.new()
+	chest_mesh.size = Vector3(0.57,0.55,0.16)
+	chest_mesh.material = dark_cloth
+	chest.mesh = chest_mesh
+	chest.position = Vector3(0,1.25,-0.31)
+	body.add_child(chest)
+	var shirt := MeshInstance3D.new()
+	var shirt_mesh := BoxMesh.new()
+	shirt_mesh.size = Vector3(0.17,0.66,0.035)
+	shirt_mesh.material = _mat(Color(0.72,0.69,0.59))
+	shirt.mesh = shirt_mesh
+	shirt.position = Vector3(0,1.15,-0.405)
+	body.add_child(shirt)
 	var head := MeshInstance3D.new()
 	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.27
-	head_mesh.height = 0.54
-	head_mesh.material = _mat(Color(0.72,0.49,0.34))
+	head_mesh.radius = 0.265
+	head_mesh.height = 0.55
+	head_mesh.material = skin
 	head.mesh = head_mesh
-	head.position = Vector3(0,1.9,0)
+	head.position = Vector3(0,1.91,0)
 	body.add_child(head)
+	var hair := MeshInstance3D.new()
+	var hair_mesh := SphereMesh.new()
+	hair_mesh.radius = 0.273
+	hair_mesh.height = 0.25
+	hair_mesh.material = _mat(Color(0.055,0.045,0.04))
+	hair.mesh = hair_mesh
+	hair.position = Vector3(0,2.08,0.015)
+	body.add_child(hair)
 	for side in [-1,1]:
-		var arm := MeshInstance3D.new()
-		var limb := CapsuleMesh.new()
-		limb.radius = 0.13
-		limb.height = 0.85
-		limb.material = _mat(color.darkened(0.2))
-		arm.mesh = limb
-		arm.name = "Arm_%d" % side
-		arm.position = Vector3(side*0.42,1.15,0)
-		arm.rotation.z = deg_to_rad(side*10)
-		body.add_child(arm)
-		var leg := MeshInstance3D.new()
-		var leg_mesh := CapsuleMesh.new()
-		leg_mesh.radius = 0.16
-		leg_mesh.height = 0.8
-		leg_mesh.material = _mat(Color(0.07,0.08,0.1))
-		leg.mesh = leg_mesh
-		leg.name = "Leg_%d" % side
-		leg.position = Vector3(side*0.18,0.42,0)
-		body.add_child(leg)
-	# A compact sidearm silhouette is attached to the right hand for the combat mission.
+		var ear := MeshInstance3D.new()
+		var ear_mesh := SphereMesh.new()
+		ear_mesh.radius = 0.065
+		ear_mesh.height = 0.12
+		ear_mesh.material = skin
+		ear.mesh = ear_mesh
+		ear.position = Vector3(side*0.255,1.9,0)
+		body.add_child(ear)
+		var eye := MeshInstance3D.new()
+		var eye_mesh := SphereMesh.new()
+		eye_mesh.radius = 0.025
+		eye_mesh.height = 0.035
+		eye_mesh.material = _mat(Color(0.025,0.025,0.025))
+		eye.mesh = eye_mesh
+		eye.position = Vector3(side*0.095,1.96,-0.245)
+		body.add_child(eye)
+		var shoulder := MeshInstance3D.new()
+		var shoulder_mesh := SphereMesh.new()
+		shoulder_mesh.radius = 0.205
+		shoulder_mesh.height = 0.3
+		shoulder_mesh.material = dark_cloth
+		shoulder.mesh = shoulder_mesh
+		shoulder.position = Vector3(side*0.43,1.43,0)
+		body.add_child(shoulder)
+		var arm_pivot := Node3D.new()
+		arm_pivot.name = "Arm_%d" % side
+		arm_pivot.position = Vector3(side*0.43,1.35,0)
+		body.add_child(arm_pivot)
+		var upper_arm := MeshInstance3D.new()
+		var upper_mesh := CapsuleMesh.new()
+		upper_mesh.radius = 0.135
+		upper_mesh.height = 0.57
+		upper_mesh.material = cloth
+		upper_arm.mesh = upper_mesh
+		upper_arm.position = Vector3(0,-0.28,0)
+		arm_pivot.add_child(upper_arm)
+		var forearm := MeshInstance3D.new()
+		var forearm_mesh := CapsuleMesh.new()
+		forearm_mesh.radius = 0.105
+		forearm_mesh.height = 0.43
+		forearm_mesh.material = dark_cloth
+		forearm.mesh = forearm_mesh
+		forearm.position = Vector3(0,-0.67,-0.015)
+		arm_pivot.add_child(forearm)
+		var hand := MeshInstance3D.new()
+		var hand_mesh := SphereMesh.new()
+		hand_mesh.radius = 0.105
+		hand_mesh.height = 0.17
+		hand_mesh.material = skin
+		hand.mesh = hand_mesh
+		hand.position = Vector3(0,-0.9,-0.035)
+		arm_pivot.add_child(hand)
+		var leg_pivot := Node3D.new()
+		leg_pivot.name = "Leg_%d" % side
+		leg_pivot.position = Vector3(side*0.19,0.77,0)
+		body.add_child(leg_pivot)
+		var thigh := MeshInstance3D.new()
+		var thigh_mesh := CapsuleMesh.new()
+		thigh_mesh.radius = 0.16
+		thigh_mesh.height = 0.56
+		thigh_mesh.material = pants_mat
+		thigh.mesh = thigh_mesh
+		thigh.position.y = -0.27
+		leg_pivot.add_child(thigh)
+		var shin := MeshInstance3D.new()
+		var shin_mesh := CapsuleMesh.new()
+		shin_mesh.radius = 0.125
+		shin_mesh.height = 0.48
+		shin_mesh.material = pants_mat
+		shin.mesh = shin_mesh
+		shin.position.y = -0.69
+		leg_pivot.add_child(shin)
+		var boot := MeshInstance3D.new()
+		var boot_mesh := BoxMesh.new()
+		boot_mesh.size = Vector3(0.29,0.19,0.42)
+		boot_mesh.material = boot_mat
+		boot.mesh = boot_mesh
+		boot.position = Vector3(0,-0.96,-0.09)
+		leg_pivot.add_child(boot)
+	# Belt, buckle and two utility pockets add readable silhouette detail.
+	var belt := MeshInstance3D.new()
+	var belt_mesh := BoxMesh.new()
+	belt_mesh.size = Vector3(0.72,0.11,0.39)
+	belt_mesh.material = metal_mat
+	belt.mesh = belt_mesh
+	belt.position = Vector3(0,0.79,0)
+	body.add_child(belt)
+	var buckle := MeshInstance3D.new()
+	var buckle_mesh := BoxMesh.new()
+	buckle_mesh.size = Vector3(0.13,0.12,0.04)
+	buckle_mesh.material = _mat(Color(0.78,0.57,0.22),0.28,0.8)
+	buckle.mesh = buckle_mesh
+	buckle.position = Vector3(0,0.8,-0.215)
+	body.add_child(buckle)
+	for side in [-1,1]:
+		var pocket := MeshInstance3D.new()
+		var pocket_mesh := BoxMesh.new()
+		pocket_mesh.size = Vector3(0.19,0.22,0.045)
+		pocket_mesh.material = dark_cloth
+		pocket.mesh = pocket_mesh
+		pocket.position = Vector3(side*0.21,0.95,-0.22)
+		body.add_child(pocket)
+	# Sidearm assembly with a visible muzzle flash, aligned to the right hand.
+	var weapon := Node3D.new()
+	weapon.name = "WeaponRoot"
+	weapon.position = Vector3(0.47,1.02,-0.32)
+	body.add_child(weapon)
 	var pistol := MeshInstance3D.new()
-	pistol.name = "Sidearm"
 	var pistol_mesh := BoxMesh.new()
-	pistol_mesh.size = Vector3(0.13, 0.16, 0.48)
-	pistol_mesh.material = _mat(Color(0.045, 0.055, 0.065), 0.34, 0.72)
+	pistol_mesh.size = Vector3(0.14,0.15,0.48)
+	pistol_mesh.material = metal_mat
 	pistol.mesh = pistol_mesh
-	pistol.position = Vector3(0.55, 1.02, -0.24)
-	body.add_child(pistol)
+	weapon.add_child(pistol)
 	var grip := MeshInstance3D.new()
 	var grip_mesh := BoxMesh.new()
-	grip_mesh.size = Vector3(0.12, 0.24, 0.16)
-	grip_mesh.material = _mat(Color(0.10, 0.075, 0.055))
+	grip_mesh.size = Vector3(0.12,0.23,0.15)
+	grip_mesh.material = _mat(Color(0.09,0.065,0.045))
 	grip.mesh = grip_mesh
-	grip.position = Vector3(0.55, 0.83, -0.12)
-	body.add_child(grip)
+	grip.position = Vector3(0, -0.17, 0.12)
+	weapon.add_child(grip)
+	var muzzle := MeshInstance3D.new()
+	muzzle.name = "MuzzleFlash"
+	var flash_mesh := SphereMesh.new()
+	flash_mesh.radius = 0.12
+	flash_mesh.height = 0.2
+	flash_mesh.material = _mat(Color(1.0,0.68,0.16),0.22,0.0)
+	muzzle.mesh = flash_mesh
+	muzzle.position = Vector3(0,0,-0.31)
+	muzzle.visible = false
+	body.add_child(muzzle)
 	var col := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
-	shape.radius=radius
-	shape.height=1.8
-	col.shape=shape
-	col.position.y=0.9
+	shape.radius = radius
+	shape.height = 1.8
+	col.shape = shape
+	col.position.y = 0.9
 	body.add_child(col)
 
 func _mission() -> void:
@@ -441,6 +567,7 @@ func _hud() -> void:
 	title_label=_label(ui,"GANGSTER: NEW YORK  •  CHAPTER 01",Vector2(28,18),24)
 	objective_label=_label(ui,"",Vector2(28,55),19)
 	health_label=_label(ui,"♥  100",Vector2(28,88),20)
+	ammo_label=_label(ui,"AMMO  12 / 72",Vector2(28,116),18)
 	var hint := _label(ui,"LEFT STICK: MOVE   •   DRAG RIGHT SIDE: LOOK   •   FIRE / AIM / JUMP",Vector2(-520,-28),13)
 	vehicle_hint = _label(ui,"Walk up to the blue car and tap ACTION to drive",Vector2(28,122),15)
 	hint.anchor_left = 1.0

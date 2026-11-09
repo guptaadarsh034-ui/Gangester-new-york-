@@ -43,7 +43,8 @@ func _layout() -> void:
 		"aim": Rect2(Vector2(s.x-280.0,s.y-150.0),Vector2(100,82)),
 		"interact": Rect2(Vector2(s.x-285.0,s.y-255.0),Vector2(108,82)),
 		"jump": Rect2(Vector2(s.x-145.0,s.y-345.0),Vector2(108,82)),
-		"sprint": Rect2(Vector2(s.x-285.0,s.y-365.0),Vector2(108,82))
+		"sprint": Rect2(Vector2(s.x-285.0,s.y-365.0),Vector2(108,82)),
+		"reload": Rect2(Vector2(s.x-420.0,s.y-365.0),Vector2(108,82))
 	}
 	ui.queue_redraw()
 
@@ -162,7 +163,7 @@ func _press_action(action: String, finger: int) -> void:
 	if not button_fingers.has(action): button_fingers[action] = {}
 	var fingers: Dictionary = button_fingers[action]
 	fingers[finger] = true
-	if action == "interact" or action == "jump":
+	if action == "interact" or action == "jump" or action == "reload":
 		if fingers.size() == 1: _tap_action(action)
 	else:
 		_set_action(action,1.0)
@@ -174,7 +175,7 @@ func _tap_action(action: String) -> void:
 		Input.action_release(action)
 
 func _release_action(action: String) -> void:
-	if action == "interact" or action == "jump":
+	if action == "interact" or action == "jump" or action == "reload":
 		Input.action_release(action)
 	else:
 		_set_action(action,0.0)
