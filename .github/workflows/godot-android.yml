@@ -32,7 +32,7 @@ jobs:
       - name: Install Godot and matching Android templates
         run: |
           mkdir -p "$HOME/.local/share/godot/export_templates/4.5.1.stable"
-          curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip -o /tmp/godot.zip
+          if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip -o /tmp/godot.zip; then\n  echo "GitHub release download unavailable; using the official Godot mirror"\n  curl -fL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://downloads.tuxfamily.org/godotengine/4.5.1/Godot_v4.5.1-stable_linux.x86_64.zip -o /tmp/godot.zip\nfi
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install -m 0755 /tmp/godot/Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
           if ! curl -fL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 600 https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz -o /tmp/templates.tpz; then
