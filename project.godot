@@ -2,10 +2,10 @@ config_version=5
 
 [application]
 config/name="GANGSTER: NEW YORK"
-config/version="0.7.0"
+config/version="0.8.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.5", "Mobile")
-config/description="Offline open-world action game with streamed regions, city travel, taxis, shops, police dispatch and mobile controls."
+config/description="Offline open-world action game with upgraded character visuals, combat, enemy AI, city travel and mobile controls."
 
 [display]
 window/size/viewport_width=1920
