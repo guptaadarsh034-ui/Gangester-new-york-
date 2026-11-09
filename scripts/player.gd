@@ -36,7 +36,7 @@ func _ready() -> void:
 func apply_look(delta_pixels: Vector2) -> void:
 	camera_yaw -= delta_pixels.x * 0.0045
 	camera_pitch = clampf(camera_pitch - delta_pixels.y * 0.12, -38.0, 18.0)
-	camera_pivot.rotation.y = camera_yaw
+	camera_pivot.rotation.y = camera_yaw - rotation.y
 	camera.rotation_degrees.x = camera_pitch
 
 func _physics_process(delta: float) -> void:
@@ -71,6 +71,7 @@ func _physics_process(delta: float) -> void:
 	if right_arm: right_arm.rotation.x = -sin(walk_clock) * 0.48 * stride
 	if left_leg: left_leg.rotation.x = -sin(walk_clock) * 0.58 * stride
 	if right_leg: right_leg.rotation.x = sin(walk_clock) * 0.58 * stride
+	camera_pivot.rotation.y = camera_yaw - rotation.y
 	move_and_slide()
 
 func take_damage(amount: int) -> void:
