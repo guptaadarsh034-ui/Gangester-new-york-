@@ -139,7 +139,7 @@ static func _add_street_details(world: Node3D) -> void:
 		_mesh_cylinder(world, "ManholeInset", Vector3(4.8, -0.04, z), 0.39, 0.025, Color(0.29, 0.31, 0.32))
 	for side in [-1.0, 1.0]:
 		for z in [-25.0, 7.0, 39.0]:
-			var x := side * 8.1
+			var x: float = side * 8.1
 			_mesh_cylinder(world, "FireHydrant", Vector3(x, 0.52, z), 0.24, 0.95, Color(0.72, 0.075, 0.035))
 			_mesh_cylinder(world, "HydrantCap", Vector3(x, 1.02, z), 0.29, 0.13, Color(0.82, 0.12, 0.055))
 			for offset in [-0.7, 0.7]:
